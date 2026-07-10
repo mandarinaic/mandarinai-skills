@@ -1,0 +1,8 @@
+interface:
+  display_name: "MandarinAi Material Illustration Skill"
+  short_description: "Labeled material illustrations, chart beautify, and explainer visuals."
+  brand_color: "#1b46a2"
+  default_prompt: "Use $mandarinai-illustration to create labeled material illustrations or chart visuals for this content."
+
+policy:
+  allow_implicit_invocation: true

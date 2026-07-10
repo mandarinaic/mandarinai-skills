@@ -1,0 +1,14 @@
+{
+  "name": "mandarinai-wechat",
+  "version": "0.1.0",
+  "description": "mandarinai-wechat optional scripts: WeChat HTML, Chrome CDP publishing",
+  "type": "module",
+  "scripts": {
+    "html": "node scripts/md-to-wechat-html.mjs",
+    "publish": "node scripts/publish-wechat.mjs"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "^1.60.0"
+  }
+}

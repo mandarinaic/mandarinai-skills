@@ -1,0 +1,9 @@
+{
+  "name": "mandarinai-video",
+  "version": "0.1.0",
+  "description": "mandarinai-video skill dependencies (HTML -> MP4 rendering)",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "playwright": "1.59.1"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "mandarinai-social-card",
+  "version": "0.1.0",
+  "description": "mandarinai-social-card skill dependencies",
+  "main": "index.js",
+  "scripts": {
+    "test:docs": "node scripts/check-skill-docs.mjs",
+    "validate": "node validate-social-deck.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "AGPL-3.0",
+  "dependencies": {
+    "playwright": "^1.60.0"
+  }
+}

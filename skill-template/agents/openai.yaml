@@ -1,0 +1,9 @@
+# Optional Codex-only metadata. Skills work in Codex without this file;
+# it only adds UI polish in the Codex app. Safe to delete.
+interface:
+  display_name: "Skill Template"
+  short_description: "One-line description for the Codex UI."
+  default_prompt: "Use $skill-template to ..."
+
+policy:
+  allow_implicit_invocation: true

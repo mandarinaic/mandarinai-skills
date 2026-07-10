@@ -1,0 +1,12 @@
+{
+  "name": "mandarinai-skills",
+  "version": "0.1.0",
+  "description": "MandarinAi agent skills - web PPT decks, social cards, content casting, paper reading, writing",
+  "author": {
+    "name": "MandarinAi",
+    "url": "https://www.mandarinai.com"
+  },
+  "repository": "https://github.com/mandarinai/mandarinai-skills",
+  "keywords": ["skills", "ppt", "social-cards", "visualization", "paper-reading", "writing"],
+  "skills": "./skills"
+}

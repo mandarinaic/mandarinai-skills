@@ -1,0 +1,32 @@
+{
+  "name": "mandarinai-skills",
+  "owner": {
+    "name": "MandarinAi",
+    "url": "https://www.mandarinai.com"
+  },
+  "metadata": {
+    "description": "MandarinAi agent skills - web PPT decks, social cards, content casting, paper/book reading, writing, WeChat 公众号",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "mandarinai-skills",
+      "description": "Web PPT decks, social cards, content casting, paper/book reading, writing engine, WeChat 公众号 writer + layout engine, video tools",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/mandarinai-book",
+        "./skills/mandarinai-card",
+        "./skills/mandarinai-illustration",
+        "./skills/mandarinai-paper",
+        "./skills/mandarinai-ppt",
+        "./skills/mandarinai-social-card",
+        "./skills/mandarinai-video",
+        "./skills/mandarinai-video-fetch",
+        "./skills/mandarinai-wechat",
+        "./skills/mandarinai-wechat-layout",
+        "./skills/mandarinai-writes"
+      ]
+    }
+  ]
+}
