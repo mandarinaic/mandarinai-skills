@@ -1,0 +1,8 @@
+interface:
+  display_name: "MandarinAi Book Deconstruction Skill"
+  short_description: "拆书 — deconstruct a book along 问题/零点/位移/落点/行囊 plus an ASCII cognitive map."
+  brand_color: "#1b46a2"
+  default_prompt: "Use $mandarinai-book to deconstruct this book into its core question, prior consensus, the author's delta, and a takeaway."
+
+policy:
+  allow_implicit_invocation: true

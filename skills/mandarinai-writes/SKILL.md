@@ -1,7 +1,6 @@
 ---
 name: mandarinai-writes
 description: "写作引擎。像手术刀剖开一个观点，一层层剥到底，产出 1000-1500 字的观点文。Use when user asks to 写一篇观点文、把想法写成文章、写透一个观点, or says 写作引擎, writes."
-user_invocable: true
 version: "6.3.0"
 ---
 
@@ -19,7 +18,7 @@ version: "6.3.0"
 
 - 用户直接给出的想法 --> 直接用
 - 文章 / 网页链接 --> 抓取正文（Claude Code 用 WebFetch；Codex / Gemini CLI 用内建 fetch 工具或 curl），从中提炼核心观点，与用户确认后下刀。**抓不到就停**，见下
-- 视频链接（YouTube / B站 / 小红书 / 抖音等）--> 用 mandarinai-video-fetch skill 取清洗后的文字稿；若该 skill 不可用，直接运行 `bash ~/.agents/skills/mandarinai-video-fetch/scripts/fetch-video.sh "<URL>"`（B站 AI 字幕、小红书需加 `-c chrome`）。从文字稿里提炼最值得剖的一个观点，与用户确认后下刀——不要复述整个视频
+- 视频链接（YouTube / B站 / 小红书 / 抖音等）--> 用 mandarinai-video-fetch skill 取清洗后的文字稿；若该 skill 不可用，直接运行 `bash <mandarinai-video-fetch 目录>/scripts/fetch-video.sh "<URL>"`（skill 目录视安装方式而定：~/.claude/skills/、~/.agents/skills/ 或各 CLI 的插件目录）（B站 AI 字幕、小红书需加 `-c chrome`）。从文字稿里提炼最值得剖的一个观点，与用户确认后下刀——不要复述整个视频
 
 ### 抓不到正文时（重要）
 

@@ -1,7 +1,6 @@
 ---
 name: mandarinai-wechat-layout
 description: 微信公众号文章排版引擎，将 Markdown 转换为可直接粘贴到公众号编辑器的 HTML。主题风格从 references/theme-index.md 注册的自定义主题库中选取，自动章节编号、关键词下划线标记、引言卡片、目录导航、代码块、图片/GIF、作者签名。支持 Markdown / Word(.docx) / PDF / 纯文本输入（非 Markdown 先自动归一化），也支持"一键自动排版"（自动推断结构+选主题），还支持根据用户描述/参考图生成自定义主题组件库并保存本地复用。触发场景：(1) 用户提到"公众号排版""公众号文章排版""微信排版""gzh"，(2) 用户想把写好的文章（md/docx/pdf/纯文本）转成公众号 HTML，(3) 用户说"自动排版""一键排版"公众号内容，(4) 用户想为公众号排版"生成新主题/自定义风格/按这张图做一套组件库"。不用于：写公众号文章（用 mandarinai-wechat）、普通网页/落地页/PPT（用前端或 mandarinai-ppt）、封面图/社交卡片（用 mandarinai-social-card）。
-user_invocable: true
 version: "1.0.0"
 ---
 

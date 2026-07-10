@@ -30,9 +30,12 @@ accent yellow `#ffc107`, the 中文-badge logo, and the 19-character brand unive
 
 ### One-time dependencies
 
+All four Node skills pin the same Playwright version, so the chromium download
+is shared — `npx playwright install chromium` only actually downloads once.
+
 ```bash
 cd skills/mandarinai-card && npm install && npx playwright install chromium
-cd skills/mandarinai-social-card && npm install
+cd skills/mandarinai-social-card && npm install && npx playwright install chromium
 cd skills/mandarinai-video && npm install && npx playwright install chromium
 # mandarinai-wechat: only for optional Chrome-CDP publishing (writing needs nothing)
 cd skills/mandarinai-wechat && npm install && npx playwright install chromium

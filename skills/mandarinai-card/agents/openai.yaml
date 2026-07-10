@@ -1,0 +1,8 @@
+interface:
+  display_name: "MandarinAi Content Caster Skill"
+  short_description: "铸 — cast any content into PNG visuals: reading cards, infographs, sketchnotes, comics, whiteboards."
+  brand_color: "#1b46a2"
+  default_prompt: "Use $mandarinai-card to cast this content into MandarinAi-branded PNG cards."
+
+policy:
+  allow_implicit_invocation: true

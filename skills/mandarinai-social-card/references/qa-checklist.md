@@ -64,7 +64,7 @@ If failing: don't shrink the canvas, don't add decorative blobs. Either expand c
 
 ### Programmatic Layout Checks
 
-`validate-social-deck.mjs` reports:
+`scripts/validate-social-deck.mjs` reports:
 
 - `R1` / `R8`: DOM overflow and visual overflow, including measured pixel amount and the lowest overflowing element.
 - `R8`: bottom whitespace and active content height, which catches "fixed too much" layouts.

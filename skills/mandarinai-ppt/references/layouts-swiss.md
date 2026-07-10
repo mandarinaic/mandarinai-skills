@@ -25,6 +25,23 @@
 
 ---
 
+## ⚠️ Pre-flight 类名清单(写 slide 前对照 `assets/template-swiss.html` 的 `<style>`)
+
+以下类必须在模板 `<style>` 里有定义才能使用;缺失就在模板里补,不要在 slide 里 inline 重写:
+
+- 画布:`canvas-card` / `chrome-min`
+- 排版:`h-hero`(无衬线 7.4vw weight 200) / `h-statement`(9.6vw) / `h-xl` / `h-md` / `t-cat`(SemiBold 600 小标) / `t-meta`(mono uppercase) / `lead` / `num-mega` / `mono`
+- 卡片(四类互斥):`card-ink` / `card-accent` / `card-fill` / `card-outlined`
+- 网格:`grid-12` / `grid-2-9` / `grid-2-9-5` / `span-N`
+- 时间线:`timeline-v` + `tl-node` + `tl-axis` + `dot` / `timeline-h` + `tl-h-node` + `tl-h-axis`
+- 图表:`kpi-tower-row` + `bar-tower` / `h-bar-chart` + `bar-row` + `bar-fill` / `spec-bars` + `bar-vert`
+- 装饰:`dot-mat`(SVG mask 实心点)/ `ring-mat`(描边圆)/ `cross-mat`(× 网格)/ `hr-hairline`
+- 版式专属:`cover-split` / `closing-split` / `duo-compare` + `vrule` / `manifesto-top` + `ink-banner-full` / `three-forces` / `loop-diagram` / `matrix-fill` + `matrix-cell` / `brief-grid` + `brief-card` / `system-diagram` / `why-now-grid` / `four-cards` / `stacked-ledger` + `ledger-row` / `tech-spec` / `image-hero` + `hero-img-wrap` + `hero-overlay-block` + `hero-stats`
+- 图片混排:`frame-img` / `fit-contain` / `r-21x9` / `r-16x9` / `r-16x10` / `h-22` / `h-26` / `swiss-img-split` / `swiss-img-grid` / `swiss-img-caption` / `swiss-keyline` / `swiss-lined`
+- spacing token:`--sp-3`...`--sp-13`(8/12/16/24/32/40/48/64/80/96/160 px)
+
+---
+
 ## 设计语言基线
 
 **配色**(`--accent` 由主题决定,见 `themes-swiss.md`)

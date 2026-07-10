@@ -1,7 +1,6 @@
 ---
 name: mandarinai-paper
 description: "Paper reader for non-academics. Reads a paper and tells it back as one continuous story to someone who doesn't know the field — built on a seven-beat spine (主角 / 困境 / 旧路 / 转折 / 解法 / 结局 / 内核). The job is storytelling that makes the paper land, not academic critique. Use when user shares an arxiv link, paper URL, PDF, or asks to analyze a research paper. Trigger words: '读论文', '讲论文', '把这篇讲给我听', '分析论文', 'paper', or when user shares an academic paper."
-user_invocable: true
 version: "5.0.0"
 ---
 

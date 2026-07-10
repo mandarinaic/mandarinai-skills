@@ -191,6 +191,6 @@ For comparison shots (before / after), use **the same parameters** on both — d
 
 ## Validator
 
-`validate-social-deck.mjs` doesn't have a screenshot-specific rule (yet). The existing R1 / R2 / R5 still apply: a `.frame-shot` that overflows or pushes the footer is still a fail.
+`scripts/validate-social-deck.mjs` doesn't have a screenshot-specific rule (yet). The existing R1 / R2 / R5 still apply: a `.frame-shot` that overflows or pushes the footer is still a fail.
 
 If a deck mixes `.frame-img` and `.frame-shot` on the same poster, that's usually a smell — pick one approach per poster.

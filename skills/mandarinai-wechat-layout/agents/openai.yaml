@@ -1,0 +1,8 @@
+interface:
+  display_name: "MandarinAi WeChat Layout Skill"
+  short_description: "Convert Markdown/docx/PDF into themed inline-styled HTML that pastes into the 公众号 editor."
+  brand_color: "#1b46a2"
+  default_prompt: "Use $mandarinai-wechat-layout to lay out this article as themed WeChat 公众号 HTML."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,6 +1,7 @@
 ---
 name: mandarinai-social-card
 description: Generate house-style social card image sets, Live Photo motion cards, material-first Live Photo puzzle layouts, triple Live Photo collages, long-video-to-Live-Photo treatments, and WeChat official account cover pairs from articles, scripts, screenshots, product notes, subtitles, photos, or user-supplied videos. Use when the user asks for 小红书图文, Rednote/Xiaohongshu images, social cards, carousel images, 3:4 covers, Live Photo, 实况照片, 单视频实况拼图, 二宫格实况拼图, 三连实况拼图, 四宫格实况拼图, 微信公众号封面, WeChat 21:9 + 1:1 covers, Swiss Style, or magazine-style social images.
+version: "1.0.0"
 ---
 
 # MandarinAi Social Card Skill
@@ -219,7 +220,7 @@ Default implementation pattern:
 - Use Playwright or a browser screenshot tool to export each `.poster` or `.cover` node.
 - Save rendered images in `output/`.
 - Verify dimensions and inspect the rendered PNGs.
-- Keep `node validate-social-deck.mjs <task-dir>` available for auto-check passes. It checks overflow (R1), footer collision (R2), Swiss bold display (R3), minimum font size (R4), 4-band density (R5), `.h-xl` line caps (R6), browser-default figure margin drift (R7), visual bounds / bottom whitespace (R8), and title-to-content gaps (R9). Exit code 1 on any FAIL — fix before final delivery when auto-check is requested. WARN is advisory but read it.
+- Keep `node scripts/validate-social-deck.mjs <task-dir>` available for auto-check passes. It checks overflow (R1), footer collision (R2), Swiss bold display (R3), minimum font size (R4), 4-band density (R5), `.h-xl` line caps (R6), browser-default figure margin drift (R7), visual bounds / bottom whitespace (R8), and title-to-content gaps (R9). Exit code 1 on any FAIL — fix before final delivery when auto-check is requested. WARN is advisory but read it.
 
 Live Photo branch:
 
@@ -323,7 +324,7 @@ If an image is only one element among many in a composite (e.g. one of nine phot
 1. After rendering completes, immediately show the user the rendered images inline (absolute paths) with a one-sentence summary of what was built.
 2. Ask one question: **"先你自己看，还是我先自动核查一遍？"** (Do you want to review first, or should I run the auto-check?)
 3. If the user says "我自己看" / "先给我" / "no need" — stop here, let them inspect, and respond to whatever they raise.
-4. If the user says "你查吧" / "auto-check" / "yes" — only then run `node validate-social-deck.mjs <task-dir>`, fix any FAIL, and re-render before final delivery. Mention density/cap WARNs.
+4. If the user says "你查吧" / "auto-check" / "yes" — only then run `node scripts/validate-social-deck.mjs <task-dir>`, fix any FAIL, and re-render before final delivery. Mention density/cap WARNs.
 
 Never silently run the validator before showing the user — it costs minutes per pass and the user often spots issues faster.
 

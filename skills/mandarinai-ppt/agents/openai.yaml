@@ -1,0 +1,8 @@
+interface:
+  display_name: "MandarinAi Web PPT Skill"
+  short_description: "Single-file HTML horizontal swipe decks — electronic-magazine or Swiss style."
+  brand_color: "#1b46a2"
+  default_prompt: "Use $mandarinai-ppt to turn this content into a horizontal swipe web PPT deck."
+
+policy:
+  allow_implicit_invocation: true

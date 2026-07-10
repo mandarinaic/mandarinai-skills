@@ -1,0 +1,8 @@
+interface:
+  display_name: "MandarinAi Video Fetch Skill"
+  short_description: "Fetch a clean transcript from a YouTube / bilibili / xiaohongshu / douyin video link."
+  brand_color: "#1b46a2"
+  default_prompt: "Use $mandarinai-video-fetch to fetch and clean the transcript of this video link."
+
+policy:
+  allow_implicit_invocation: true

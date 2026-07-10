@@ -1,0 +1,8 @@
+interface:
+  display_name: "MandarinAi Writing Engine Skill"
+  short_description: "写作引擎 — dissect one opinion layer by layer into a 1000-1500 word essay."
+  brand_color: "#1b46a2"
+  default_prompt: "Use $mandarinai-writes to dissect this idea into a sharp 1000-1500 word opinion essay."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,7 +1,7 @@
 ---
 name: mandarinai-book
 description: 拆一本书，以「问题」为轴心走一条线。五件事：作者在答什么问题（问题），这个问题之前各流派/社会共识怎么答（零点），作者带来什么独特洞见——公式/理论框架/模型/概念四选一——相对共识挪动了什么（位移/delta），落成哪句结论（落点），最后萃一个 takeaway 作为精神内核（行囊）。收尾画一张 ASCII 参考系图（千脑智能式）：各流派、旧共识、作者钉到同一张图的位置上，delta 是图上一段看得见的距离，再走两步做预测——看懂这本书在认知史里挪动了哪一步，还能拿它预测书外的新事。Accepts a book title (web-grounded) or a local book file (EPUB / PDF / TXT, full-text grounded). Use when user says '拆书', '拆这本', '分析这本书', '这本书在讲什么', '压缩一本书', 'book', or shares a book name / book file wanting structural analysis. NOT FOR 章节摘要、论文（用 mandarinai-paper）、单一观点深钻（用 mandarinai-writes）.
-user_invocable: true
+version: "1.0.0"
 ---
 
 # mandarinai-book: 拆书

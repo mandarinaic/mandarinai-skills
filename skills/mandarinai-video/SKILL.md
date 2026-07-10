@@ -1,7 +1,6 @@
 ---
 name: mandarinai-video
 description: "Create short animated videos (MP4) from single-file HTML scenes, rendered locally with Playwright + ffmpeg. Six built-in frame styles: glitch title (cyberpunk), liquid aurora hero, light-leak cinematic, NYT-style animated data chart, typewriter terminal text, logo outro. Use when the user asks to 做视频 / 做个片头 / 生成 MP4 / video intro / title card / animated chart video / 转场 / outro, or wants article/deck content turned into a short video. Not for: long-form editing, talking-head video, or fetching existing videos (use mandarinai-video-fetch for that)."
-user_invocable: true
 version: "0.1.0"
 ---
 

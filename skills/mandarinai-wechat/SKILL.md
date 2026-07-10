@@ -1,7 +1,6 @@
 ---
 name: mandarinai-wechat
 description: "微信公众号写作。把一个选题/链接/视频写成一篇能在公众号发出去的完整文章——钩子开头、可扫读的排版、加粗金句、一个真观点、引导关注/在看/转发的结尾，再配 3-5 个标题候选。可选：用 Chrome CDP 把成稿灌进公众号编辑器存草稿（不需要 API key，个人订阅号也能用）。Use when user asks to 写公众号、写一篇推文、把这个写成公众号文章、公众号怎么写、起公众号标题、发到公众号/灌进公众号编辑器, or says 公众号, WeChat article, 推文."
-user_invocable: true
 version: "1.0.0"
 ---
 
@@ -27,7 +26,7 @@ version: "1.0.0"
 
 - **一个选题 / 一段想法** → 直接写
 - **文章 / 网页链接** → 抓正文（Claude Code 用 WebFetch；Codex / Gemini CLI 用内建 fetch 或 `curl`），提炼可写的角度，与用户确认后再写。**抓不到就停**，见下
-- **视频链接**（YouTube / B站 / 小红书 / 抖音）→ 用 `mandarinai-video-fetch` skill 取清洗后的文字稿；不可用时跑 `bash ~/.agents/skills/mandarinai-video-fetch/scripts/fetch-video.sh "<URL>"`（B站 AI 字幕、小红书加 `-c chrome`）。从文字稿里挑一个最值得写的角度，不要复述整条视频
+- **视频链接**（YouTube / B站 / 小红书 / 抖音）→ 用 `mandarinai-video-fetch` skill 取清洗后的文字稿；不可用时跑 `bash <mandarinai-video-fetch 目录>/scripts/fetch-video.sh "<URL>"`（skill 目录视安装方式而定：~/.claude/skills/、~/.agents/skills/ 或各 CLI 的插件目录）（B站 AI 字幕、小红书加 `-c chrome`）。从文字稿里挑一个最值得写的角度，不要复述整条视频
 
 ### 抓不到正文时（重要）
 

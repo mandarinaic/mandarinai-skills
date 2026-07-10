@@ -1,7 +1,6 @@
 ---
 name: mandarinai-card
 description: "Content caster (铸). Transforms content into PNG visuals. Seven molds: -l (default) long reading card, -i infograph, -m multi-card reading cards (1080x1440, default for long content), -v editorial sketchnote (problem→failure→pivot→insight→naming, magazine + archive layout), -c comic (manga-style B&W), -w whiteboard (marker-style board layout), -b big-fonts attachment card (1080x1440, weathered 碑刻 style for 小红书). Output to ~/Downloads/. Use when user says '铸', 'cast', '做成图', '做成卡片', '做成信息图', '做成海报', '视觉笔记', 'sketchnote', '杂志', 'editorial', '漫画', 'comic', 'manga', '白板', 'whiteboard', '大字', '附件图', 'big fonts', '小红书卡片'."
-user_invocable: true
 version: "2.3.0"
 ---
 
@@ -50,7 +49,7 @@ version: "2.3.0"
 - URL --> 抓取网页内容（Claude Code 用 WebFetch；Codex / Gemini CLI 用内建 fetch 工具或 curl）
 - 粘贴文本 --> 直接使用
 - 文件路径 --> Read 获取
-- 视频链接（YouTube / B站 / 小红书 / 抖音等）--> 用 mandarinai-video-fetch skill 取清洗后的文字稿作为内容；若该 skill 不可用，直接运行 `bash ~/.agents/skills/mandarinai-video-fetch/scripts/fetch-video.sh "<URL>"`（B站 AI 字幕、小红书需加 `-c chrome`）
+- 视频链接（YouTube / B站 / 小红书 / 抖音等）--> 用 mandarinai-video-fetch skill 取清洗后的文字稿作为内容；若该 skill 不可用，直接运行 `bash <mandarinai-video-fetch 目录>/scripts/fetch-video.sh "<URL>"`（skill 目录视安装方式而定：~/.claude/skills/、~/.agents/skills/ 或各 CLI 的插件目录）（B站 AI 字幕、小红书需加 `-c chrome`）
 
 ### 文件命名
 

@@ -2,7 +2,7 @@
 /*
  * validate-social-deck.mjs
  *
- *   node validate-social-deck.mjs <task-dir|index.html>
+ *   node scripts/validate-social-deck.mjs <task-dir|index.html>
  *
  * Checks each <section class="poster …"> in the target HTML against the rules
  * codified in SKILL.md / qa-checklist.md / components.md. Exits 1 if any FAIL.
@@ -31,7 +31,7 @@ for (const a of args) {
   else if (!target) target = a;
 }
 if (!target) {
-  console.error("usage: node validate-social-deck.mjs <task-dir|index.html> [--style=swiss|editorial]");
+  console.error("usage: node scripts/validate-social-deck.mjs <task-dir|index.html> [--style=swiss|editorial]");
   process.exit(2);
 }
 const abs = path.resolve(target);

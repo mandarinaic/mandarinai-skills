@@ -5,12 +5,12 @@
   "main": "index.js",
   "scripts": {
     "test:docs": "node scripts/check-skill-docs.mjs",
-    "validate": "node validate-social-deck.mjs"
+    "validate": "node scripts/validate-social-deck.mjs"
   },
   "keywords": [],
   "author": "",
   "license": "AGPL-3.0",
   "dependencies": {
-    "playwright": "^1.60.0"
+    "playwright": "1.59.1"
   }
 }

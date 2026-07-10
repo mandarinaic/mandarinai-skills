@@ -1,6 +1,7 @@
 ---
 name: mandarinai-ppt
 description: 生成横向翻页网页 PPT（单 HTML 文件），含 WebGL 背景、章节幕封、数据大字报、图片网格等模板。提供两种风格：① "电子杂志 × 电子墨水"（衬线 + 流体背景 + 暖色） ② "瑞士国际主义"（无衬线 + 网格点阵 + IKB/柠檬黄/柠檬绿/安全橙高亮）。当用户需要制作分享 / 演讲 / 发布会风格的网页 PPT，或提到"杂志风 PPT"、"瑞士风 PPT"、"Swiss Style"、"horizontal swipe deck"时使用。
+version: "1.0.0"
 ---
 
 # Magazine Web Ppt
@@ -71,7 +72,7 @@ description: 生成横向翻页网页 PPT（单 HTML 文件），含 WebGL 背�
 | 1 | **风格 A 还是 B?**(电子杂志风 / 瑞士国际主义风) | **必须先问**,决定用哪个 template + layouts + themes 文件 |
 | 2 | **受众是谁?分享场景?**(行业内部 / 商业发布 / demo day / 私享会) | 决定语言风格和深度 |
 | 3 | **分享时长?** | 15 分钟 ≈ 10 页,30 分钟 ≈ 20 页,45 分钟 ≈ 25-30 页 |
-| 4 | **有没有原始素材?**(文档 / 数据 / 旧 PPT / 文章链接 / 视频链接) | 有素材就基于素材,没有就帮他搭;视频链接先用 mandarinai-video-fetch skill 转成文字稿再当素材用(不可用时运行 `bash ~/.agents/skills/mandarinai-video-fetch/scripts/fetch-video.sh "<URL>"`) |
+| 4 | **有没有原始素材?**(文档 / 数据 / 旧 PPT / 文章链接 / 视频链接) | 有素材就基于素材,没有就帮他搭;视频链接先用 mandarinai-video-fetch skill 转成文字稿再当素材用(不可用时运行 `bash <mandarinai-video-fetch 目录>/scripts/fetch-video.sh "<URL>"`（skill 目录视安装方式而定：~/.claude/skills/、~/.agents/skills/ 或各 CLI 的插件目录）) |
 | 5 | **有没有图片或截图?希望怎么处理?** | 决定图文版式、图片槽位、截图是否需要 CleanShot X 式适配或 GPT-M 2.0 重构 |
 | 6 | **想要哪套主题色?** | 杂志风 5 套(`themes.md`) / 瑞士风 4 套(`themes-swiss.md`),挑一 |
 | 7 | **有没有硬约束?**(必须包含 XX 数据 / 不能出现 YY) | 避免返工 |
@@ -246,20 +247,9 @@ cp "<SKILL_ROOT>/assets/template-swiss.html" "项目/XXX/ppt/index.html"
 3. 如果某个类缺失:**在模板的 `<style>` 里补上**,不要在每个 slide 里 inline 重写
 4. **模板是唯一的类名来源**——不要发明新类名,如需自定义用 `style="..."` inline
 
-**风格 A 常见容易遗漏的类**:
-`h-hero` / `h-xl` / `h-sub` / `h-md` / `lead` / `kicker` / `meta-row` / `stat-card` / `stat-label` / `stat-nb` / `stat-unit` / `stat-note` / `pipeline-section` / `pipeline-label` / `pipeline` / `step` / `step-nb` / `step-title` / `step-desc` / `grid-2-7-5` / `grid-2-6-6` / `grid-2-8-4` / `grid-3-3` / `grid-6` / `grid-3` / `grid-4` / `frame` / `frame-img` / `img-cap` / `callout` / `callout-src` / `chrome` / `foot`
-
-**风格 B 常见容易遗漏的类**(2026-05 重构后):
-- 画布:`canvas-card` / `chrome-min`
-- 排版:`h-hero`(无衬线 7.4vw weight 200) / `h-statement`(9.6vw) / `h-xl` / `h-md` / `t-cat`(SemiBold 600 小标) / `t-meta`(mono uppercase) / `lead` / `num-mega` / `mono`
-- 卡片(四类互斥):`card-ink` / `card-accent` / `card-fill` / `card-outlined`
-- 网格:`grid-12` / `grid-2-9` / `grid-2-9-5` / `span-N`
-- 时间线:`timeline-v` + `tl-node` + `tl-axis` + `dot` / `timeline-h` + `tl-h-node` + `tl-h-axis`
-- 图表:`kpi-tower-row` + `bar-tower` / `h-bar-chart` + `bar-row` + `bar-fill` / `spec-bars` + `bar-vert`
-- 装饰:`dot-mat`(SVG mask 实心点)/ `ring-mat`(描边圆)/ `cross-mat`(× 网格)/ `hr-hairline`
-- 版式专属:`cover-split` / `closing-split` / `duo-compare` + `vrule` / `manifesto-top` + `ink-banner-full` / `three-forces` / `loop-diagram` / `matrix-fill` + `matrix-cell` / `brief-grid` + `brief-card` / `system-diagram` / `why-now-grid` / `four-cards` / `stacked-ledger` + `ledger-row` / `tech-spec` / `image-hero` + `hero-img-wrap` + `hero-overlay-block` + `hero-stats`
-- 图片混排:`frame-img` / `fit-contain` / `r-21x9` / `r-16x9` / `r-16x10` / `h-22` / `h-26` / `swiss-img-split` / `swiss-img-grid` / `swiss-img-caption` / `swiss-keyline` / `swiss-lined`
-- spacing token:`--sp-3`...`--sp-13`(8/12/16/24/32/40/48/64/80/96/160 px)
+**完整类名清单**(逐项对照,不要凭记忆):
+- 风格 A → `references/layouts.md` 开头"生成前必读(Pre-flight)"一节
+- 风格 B → `references/layouts-swiss.md` 开头"Pre-flight 类名清单"一节(画布 / 排版 / 卡片 / 网格 / 时间线 / 图表 / 装饰 / 版式专属 / 图片混排 / spacing token)
 
 #### 3.0.5 · 规划主题节奏（**和类预检同等重要**)
 
@@ -305,32 +295,7 @@ cp "<SKILL_ROOT>/assets/template-swiss.html" "项目/XXX/ppt/index.html"
 - SVG 只负责几何图形。不要在 SVG 里写文字标签,所有标签改用 HTML 网格/卡片/caption。
 - 地理/历史/城市路线/地点关系页使用 `S08 + Swiss Map Component`:先读 `references/swiss-map-component.md`,仍保留 `data-layout="S08"`。
 
-原始 22 个正文版式如下:
-
-| Layout | 用途 |
-|---|---|
-| S01 Index Cover | 原始索引封面 |
-| S02 Vertical Timeline + KPI | 演化对比 / 年代变迁 |
-| S03 Split Statement | 核心论点 / 左右分屏 |
-| S04 Six Cells | 6 项概念定义 |
-| S05 Three Layers | 三层架构 |
-| S06 KPI Tower | 4 项数据视觉化高度差 |
-| S07 H-Bar Chart | 5-10 项排名比较 |
-| S08 Duo Compare | Before/After 对照 |
-| S09 Dot Matrix Statement | 大引述 / statement |
-| S10 Split Closing | 收束页 |
-| S11 Horizontal Timeline | 4-7 步流程 |
-| S12 Manifesto + Ink Banner | 阶段性结论 |
-| S13 Three Forces | 3 个对等概念深化 |
-| S14 Loop Form | 自学闭环 / 自动化 |
-| S15 Matrix + Hero Stat | 8-12 项矩阵 + 总数据 |
-| S16 Multi-card Brief | 6 项快讯小卡 |
-| S17 System Diagram | 三层架构 / 生态地图 |
-| S18 Why Now | 三论点 + 数据支撑 |
-| S19 Four Cards | 4 项等权特性 |
-| S20 Stacked KPI Ledger | 纵向账单数据 |
-| S21 Tech Spec Sheet | 产品规格 / benchmark |
-| S22 Image Hero | 21:9 顶图 + 标题块 + 三列 KPI |
+原始 22 个正文版式(S01 Index Cover ... S22 Image Hero)的完整登记表——每个版式的用途、必须保留的骨架、图片规则——见 `references/swiss-layout-lock.md` 的「登记版式」一节,选版式时对照那张表,不要凭印象。
 
 **登记扩展**:`S08 + Swiss Map Component` 用于地点、人物住所、路线、城市关系。它不是新 layout,而是 S08 右侧插槽的 MapLibre 地图组件;必须按 `references/swiss-map-component.md` 的点位、连线、卡片和右上角缩放/拖动控制实现。
 
@@ -385,30 +350,9 @@ cp "<SKILL_ROOT>/assets/template-swiss.html" "项目/XXX/ppt/index.html"
 
 #### 3.2.2 · 瑞士风演示最小字号与字重阶梯(风格 B 必做)
 
-瑞士风用于投屏演示时,小字不能按网页注释的 10-12px 写。默认遵守以下下限:
+投屏演示的小字不能按网页注释的 10-12px 写:正文 ≥ 18px、卡片描述/caption/图注 ≥ 16px、meta/mono label ≥ 14px。内容放不下就删文案、拆页或换 Sxx 版式,不要压字号。
 
-| 文本类型 | 最小字号 |
-|---|---|
-| 正文段落 / 主要说明 | `18px` |
-| 卡片描述 / 列表 / 时间线说明 / caption / 图注 | `16px` |
-| meta / kicker / mono label / 图表标签 | `14px` |
-
-如果内容放不下,先删减文案、拆成两页、换更适合的 Sxx 版式,不要把字号压到 10/11/12/13px。尤其是中文 deck,不要为了塞三行解释把 `body-sm`、caption、timeline label 改小。
-
-**字号与字重阶梯(瑞士风核心)** — "越大越细,越小越粗"不是感性描述,而是具体映射:
-
-| 字号区间 | 推荐字重 | 典型场景 |
-|---|---|---|
-| ≥ 8vw | 200 (ExtraLight) | 封面大字、巨号 KPI、h-statement |
-| 4-7.9vw | 200-300 | 章节标题(h-xl/h-xl-zh)、大编号 |
-| 1.8-3.9vw | 300-400 | 中型标题、takeaway 标题(≈1.8vw)、中号数字 |
-| 1-1.7vw / 16-20px | 400-500 | 正文段落、卡片描述、说明文字 |
-| 13-15px(小字) | 500-600 | meta、kicker、角标、图表标签、caption 强调 |
-
-**硬规则:**
-- 同一页内,字号越小的元素字重必须 ≥ 字号越大的元素(不允许 16px 正文用 300 而 1.8vw 标题用 500)
-- 16px 左右的小字拒绝使用 weight 300(太细不可读),最低 400,推荐 500
-- 封面/IkB 反白大标题内强调字用 `italic + weight 300`,不要用 accent 色(蓝压蓝看不见)
+**字重阶梯**——"越大越细,越小越粗"是具体映射(≥8vw 用 200,16-20px 用 400-500,13-15px 小字用 500-600),同一页内字号小的元素字重必须 ≥ 字号大的;16px 左右禁止 weight 300。完整字号区间 → 字重映射表和 grep 自查命令见 `references/checklist.md` 的 0-S-4 节。
 
 组件细节(字体、颜色、网格、图标、callout、stat-card 等)在 `references/components.md`。
 
@@ -427,42 +371,9 @@ cp "<SKILL_ROOT>/assets/template-swiss.html" "项目/XXX/ppt/index.html"
 5. 对照原始参考模板时,以实际页面用法为准,不要只看 CSS helper 定义;原始页面的大字实际多为 200/300,不要被 raw CSS 里的 700/800/900 带偏。
 6. 如果页面别扭,先判断是版式选错、必选组件缺失、可选组件滥用,还是间距/安全区问题;不要直接靠加 margin 硬救。
 
-#### 风格 A · 电子杂志风必查
+#### 分风格快速必查(逐条过,不要跳)
 
-1. **大标题必须是衬线字体**——如果显示成非衬线,99% 是 Step 3.0 预检没做,`h-hero` 类在 template.html 里缺失
-2. **图片网格里只用 `height:Nvh`,不用 `aspect-ratio`**(会撑破)
-3. **图片不能堆到页面底部**——不要用 `align-self:end`,用 grid + `align-items:start`(见 Step 3.2)
-4. **图片只能用标准比例**(16:10 / 4:3 / 3:2 / 1:1 / 16:9),不要复制原图的奇葩比例
-5. **中文大标题 ≤ 5 字且 `nowrap`**(避免 1 字 1 行)
-6. **用 Lucide,不用 emoji**
-7. **标题用衬线,正文用非衬线,元数据用等宽**
-
-#### 风格 B · 瑞士国际主义必查
-
-1. **全程无衬线**——任何衬线字体出现都是错的(检查 `font-family` 没用 `--serif` 类变量)
-2. **只有一个 accent 色**——一份 deck 不能同时出现 IKB 蓝 + 柠檬黄 + 安全橙等多个高亮色
-3. **不允许渐变 / 阴影 / 圆角**——所有色块直角纯色,任何 `box-shadow` / `linear-gradient` / `border-radius` > 0 都要砍掉(rule 横线除外)
-4. **极致字号对比**——主标题与正文比例 ≥ 8:1
-5. **大字号必须双约束限高**——`font-size:min(Xvw, Yvh)`,只用 vw 在标准 16:9 屏会溢出(吸取 P15/P20/P22 教训)
-6. **大字字重 200**(ExtraLight)——字号越大越细,瑞士风灵魂;**禁止** 600/700/800 大字
-7. **卡片填充类型互斥**——`card-ink` / `card-accent` / `card-fill` / `card-outlined` 四类**不能混用**(禁止"蓝底+蓝描边"、"灰底+描边"等)
-8. **多卡并列时统一样式**——3-12 张卡用同一类(优先 `card-fill` 灰底);只突出一项时单独换 `card-accent`,且**只允许一张**
-9. **直角到底**——任何 `border-radius` 都不允许;装饰用 8×8 直角小方块,**不要** 9px 圆形点
-10. **图标用 lucide,不自己画 SVG**——`<i data-lucide="name"></i>` + `lucide.createIcons()`,选棱角风格(避免圆胖)
-11. **时间线对齐**——axis 列固定 12px + dot 绝对定位,**不要**用 grid `justify-self`(会与虚线错位)
-12. **章节级标题与内容间距 ≥ 9vh**——避免拥挤(吸取 P15/P16 教训)
-13. **每页一个语义化动效 recipe**——不是统一 fade-up,数字 scale 弹入、bar scaleY 拉起、SVG stroke 描线、节点序列点亮等;**禁止**所有页用同一个 generic 配方
-14. **playSlide 入口 reveal 容器**——`[data-anim]` 容器先强制 opacity:1,recipe 内再用 motion `{opacity:[0,1]}` 覆盖,否则有些页会"看不见"
-15. **ESC 索引页可见性**——cloned slide 必须有 CSS override 让 `[data-anim]` 在缩略图里 opacity:1
-16. **Helvetica/Inter 兜底中文字体**——Windows 用户没有"苹方",必须 fallback 到 `"Microsoft YaHei UI", "Noto Sans SC"`
-17. **字体粗细体例**:大字 200 / 正文 300 / `t-cat` SemiBold 600 / `t-meta` mono uppercase
-18. **保留低功耗快捷键**——右下角必须提示 `B 静态`;按 `B` 切换 `body.low-power`,停止 WebGL/ASCII canvas RAF 和 Motion 入场动画
-19. **装饰元素严格在 grid 内**——bars 矩阵、点阵、ring-mat 不能贴边或溢出页面
-20. **底部内容预留 nav 空间**——nav 在 ~97vh,内容收尾不要过 93vh(吸取 P22 KPI 大字溢底教训)
-21. **图片容器直角无阴影**——`.frame-img` 不加 `border-radius` / `box-shadow`;边界只用 hairline
-22. **S15/S16/S22 图片同组一致**——同一组图片统一比例、高度、边距、线条粗细;信息图/UI 图加 `.fit-contain`
-23. **组件角色要正确**——S15/S16 图片格需要 caption 信息锚点;S22 的 KPI/说明是必选;数据专用版式必须有真实数据,不能靠文案硬填
-24. **通用/非通用版式要分清**——S03/S08/S11/S19 较通用;S06/S07/S20/S21/S22 是数据/案例专用;S14/S15/S17 是结构专用
+完整清单在 `references/checklist.md` 开头的「交付前快速必查」一节——风格 A 7 条(衬线大标题、图片网格 `height:Nvh`、标准比例、中文标题 ≤5 字 nowrap、Lucide 不用 emoji、字体分工等),风格 B 24 条(全程无衬线、单一 accent、无渐变/阴影/圆角、大字 weight 200、卡片四类互斥、双约束限高、时间线对齐、动效 recipe、低功耗 B 键、nav 安全区等)。按当前风格把对应清单逐条过完才能交付。
 
 ### Step 5 · 本地预览
 
@@ -550,19 +461,7 @@ mandarinai-ppt/
 6. **Hairline 是手术刀** — 1px 的极细分割线就够,不要加粗、不要加阴影
 7. **点阵装饰只在 hero 页透出** — 正文页保持纯净底色
 
-## 参考作品
+## 参考作品(风格锚点)
 
-本 skill 的两种风格分别参考了：
-
-**风格 A · 电子杂志风**:
-- 歸藏 "一人公司：被 AI 折叠的组织" 分享（2026-04-22，27 页）
-- *Monocle* 杂志的版式
-- YC 总裁 Garry Tan "Thin Harness, Fat Skills" 那篇博客的 demo
-
-**风格 B · 瑞士国际主义风**:
-- Massimo Vignelli 的 NYC Subway / Unimark 系统
-- *Helvetica Forever* 的字体设计语言
-- Josef Müller-Brockmann 的网格系统经典著作
-- 当代设计:Acne Studios / Off-White / IKEA / Beck Design
-
-可以把它们当做风格锚点。
+- **风格 A**:歸藏"一人公司"分享(2026-04-22)、*Monocle* 杂志版式、Garry Tan "Thin Harness, Fat Skills" 博客 demo
+- **风格 B**:Massimo Vignelli(NYC Subway / Unimark)、*Helvetica Forever*、Josef Müller-Brockmann 网格系统;当代:Acne Studios / Off-White / IKEA / Beck Design

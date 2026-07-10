@@ -1,6 +1,7 @@
 ---
 name: mandarinai-illustration
 description: Generate house-style material illustrations, labeled explanatory visuals, material-styled chart illustrations, and data-first editorial images from articles, notes, product concepts, workplace reports, creator posts, tutorials, school materials, humanities topics, science explanations, screenshots, or chart data. Use when the user asks for 配图, 带字插图, 解释图, 图解插画, 概念拆解图, 图表美化, 数据图美化, 3D 图表, 汇报配图, 内容配图, 小学课文配图, 生物/化学/物理解释图, 人文类配图, process/loop/system diagrams, or wants GPT-Image / image generation to create supporting images that can sit inside social cards, docs, slides, PPTs, or posts.
+version: "1.0.0"
 ---
 
 # MandarinAi Material Illustration

@@ -1,7 +1,6 @@
 ---
 name: mandarinai-video-fetch
 description: "Fetch the transcript/text of an online video so downstream skills can turn it into articles, cards, or PPTs. Supports YouTube, bilibili (B站), xiaohongshu (小红书), douyin and other yt-dlp platforms — tries platform subtitles first, falls back to audio + whisper transcription. Use when the user gives a video link and wants 文字稿/字幕/转写/总结, or wants to 把视频做成文章/卡片/PPT (then chain into mandarinai-writes / mandarinai-card / mandarinai-ppt). Trigger words: '视频转文字', '拿字幕', 'transcript', 'B站视频', 'YouTube视频', '小红书视频', any video URL."
-user_invocable: true
 version: "0.1.0"
 ---
 

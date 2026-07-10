@@ -1,0 +1,8 @@
+interface:
+  display_name: "MandarinAi Video Skill"
+  short_description: "Short animated MP4s rendered locally from single-file HTML scenes (Playwright + ffmpeg)."
+  brand_color: "#1b46a2"
+  default_prompt: "Use $mandarinai-video to create a short animated MP4 (title card, data chart, or outro) from this content."
+
+policy:
+  allow_implicit_invocation: true

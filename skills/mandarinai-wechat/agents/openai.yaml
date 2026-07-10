@@ -1,0 +1,8 @@
+interface:
+  display_name: "MandarinAi WeChat Writer Skill"
+  short_description: "Write a complete WeChat 公众号 article — hook title, scannable layout, golden quotes, CTA ending."
+  brand_color: "#1b46a2"
+  default_prompt: "Use $mandarinai-wechat to write this topic up as a publish-ready WeChat 公众号 article with title candidates."
+
+policy:
+  allow_implicit_invocation: true

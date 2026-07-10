@@ -1,0 +1,8 @@
+interface:
+  display_name: "MandarinAi Paper Storyteller Skill"
+  short_description: "Retell an academic paper as one continuous seven-beat story for non-academics."
+  brand_color: "#1b46a2"
+  default_prompt: "Use $mandarinai-paper to read this paper and tell it back as a story someone outside the field can follow."
+
+policy:
+  allow_implicit_invocation: true
