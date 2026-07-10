@@ -42,6 +42,7 @@ cd skills/mandarinai-wechat && npm install && npx playwright install chromium
 
 - Name is always written **MandarinAi** (Chinese contexts: **MandarinAi中文学习网**); site `https://www.mandarinai.com`; tagline **Learn Chinese the Smart Way**.
 - Brand blue `#1b46a2`, accent yellow `#ffc107`, HSK level palette, Noto Sans SC / Noto Serif SC — each visual skill carries a "MandarinAi 品牌基调" block in its SKILL.md.
+- Official marks (transparent PNG): horizontal wordmark + square icon in `skills/mandarinai-illustration/assets/brand/`; `skills/mandarinai-card/assets/logo.png` is the circle-crop-safe avatar version used in card signatures.
 - Character universe: model sheets in `skills/mandarinai-illustration/assets/characters/`, casting guide + generation workflow in `references/characters.md` of the same skill. 3D `.glb` versions of every character exist outside this repo.
 
 ## Credits & licensing

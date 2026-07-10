@@ -12,6 +12,7 @@ description: 生成横向翻页网页 PPT（单 HTML 文件），含 WebGL 背�
 - 品牌名写法固定：**MandarinAi**（中文语境可用 **MandarinAi中文学习网**）；官网 mandarinai.com；tagline：**Learn Chinese the Smart Way**
 - 品牌色：主色蓝 `#1b46a2`、点缀黄 `#ffc107`；HSK 等级色：HSK1 `#ffc107` / HSK2 `#17707F` / HSK3 `#B45309` / HSK4 `#B71A27` / HSK5 `#303255` / HSK6 `#4A1C57` / HSK7-9 `#1E7E34`
 - 品牌字体：Noto Sans SC（正文）/ Noto Serif SC（装饰标题）/ JetBrains Mono（代码/数据）
+- 官方 logo：横版字标 `mandarinai-illustration/assets/brand/mandarinai-logo.png`（2600×1000 透明底）、方形 icon `mandarinai-illustration/assets/brand/mandarinai-icon.png`（1000×1000 透明底）；卡片署名头像用 `mandarinai-card/assets/logo.png`（460×460 白底圆裁安全版）
 - **用法**：品牌元素只用于署名、页脚、封面落款等 accent 位置，不覆盖各模式/主题自身的配色系统；仅当用户明确要"品牌风/官方风"时才整体采用品牌色
 
 ## 这个 Skill 做什么
