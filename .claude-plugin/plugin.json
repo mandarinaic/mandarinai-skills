@@ -6,7 +6,7 @@
     "name": "MandarinAi",
     "url": "https://www.mandarinai.com"
   },
-  "repository": "https://github.com/mandarinai/mandarinai-skills",
+  "repository": "https://github.com/mandarinaic/mandarinai-skills",
   "keywords": ["skills", "ppt", "social-cards", "visualization", "paper-reading", "writing"],
   "skills": "./skills"
 }

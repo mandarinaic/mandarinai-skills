@@ -87,10 +87,10 @@ Because they are symlinks, editing or pulling this repo updates all CLIs at once
 
 ```bash
 # all skills, into the three CLIs this repo targets
-npx skills add mandarinai/mandarinai-skills -g -s '*' -a claude-code -a codex -a gemini-cli -y
+npx skills add mandarinaic/mandarinai-skills -g -s '*' -a claude-code -a codex -a gemini-cli -y
 
 # one skill
-npx skills add mandarinai/mandarinai-skills -g -s mandarinai-card -a claude-code -a codex -a gemini-cli -y
+npx skills add mandarinaic/mandarinai-skills -g -s mandarinai-card -a claude-code -a codex -a gemini-cli -y
 ```
 
 Don't use `--all`: it expands to `--agent '*'` (every agent the CLI knows), and
@@ -105,7 +105,7 @@ marketplace. This repo ships `.claude-plugin/marketplace.json` (one plugin
 exposing all skills), so inside an `agy` session:
 
 ```text
-/plugin marketplace add mandarinai/mandarinai-skills
+/plugin marketplace add mandarinaic/mandarinai-skills
 /plugin install mandarinai-skills@mandarinai-skills
 ```
 
