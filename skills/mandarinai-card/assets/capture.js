@@ -36,7 +36,7 @@ async function main() {
   try {
     chromium = require('playwright').chromium;
   } catch {
-    console.error('Playwright not found. Run: npx playwright install chromium');
+    console.error('Playwright not found. Run in the skill root: npm install playwright && npx playwright install chromium');
     process.exit(1);
   }
 
@@ -45,7 +45,16 @@ async function main() {
   await page.setViewportSize({ width, height: fullpage ? 800 : height });
 
   const fileUrl = 'file://' + resolvedHtml;
-  await page.goto(fileUrl, { waitUntil: 'networkidle' });
+  // Don't gate the capture on the network: 'networkidle'/'load' can hang past
+  // the 30s navigation timeout when a font CDN stalls or CJK subsets trickle
+  // in. Parse the DOM first, then give stylesheets + webfonts a bounded
+  // window — a dead CDN degrades to fallback fonts instead of failing.
+  await page.goto(fileUrl, { waitUntil: 'domcontentloaded' });
+  await page.waitForLoadState('load', { timeout: 20000 }).catch(() => {});
+  await page.evaluate(() => Promise.race([
+    document.fonts ? document.fonts.ready : Promise.resolve(),
+    new Promise(resolve => setTimeout(resolve, 15000)),
+  ])).catch(() => {});
   await page.waitForTimeout(500);
 
   if (fullpage) {

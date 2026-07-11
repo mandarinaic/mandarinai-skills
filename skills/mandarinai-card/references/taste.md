@@ -12,7 +12,11 @@
 根据模具自动调整：
 - `-l` 长图：DESIGN_VARIANCE=5, VISUAL_DENSITY=3（阅读舒适优先）。变化通过**色调感知**实现——不同内容气质对应不同背景底色和强调色（见 mode-long.md 步骤 2.5）
 - `-i` 信息图：DESIGN_VARIANCE=7, VISUAL_DENSITY=8（数据密度优先）。变化通过**动态 REF 编码**和**内容驱动的自定义布局**实现
-- `-c` 海报：DESIGN_VARIANCE=9, VISUAL_DENSITY=2（视觉冲击优先）。与长图共享色调系统，结尾标记仅在末页出现
+- `-m` 多卡：DESIGN_VARIANCE=5, VISUAL_DENSITY=3（与长图同源的阅读节奏）。与长图共享色调系统，结尾标记仅在末页出现
+- `-v` 视觉笔记：DESIGN_VARIANCE=9, VISUAL_DENSITY=6（编辑式错落优先）。layout 模具与字族对比见 mode-sketchnote.md
+- `-c` 漫画：DESIGN_VARIANCE=8, VISUAL_DENSITY=5（分镜叙事优先）。黑白网点，视觉语言随漫画家风格切换
+- `-w` 白板：DESIGN_VARIANCE=7, VISUAL_DENSITY=6（结构清晰优先）。框图/箭头/马克笔标记服务信息结构
+- `-b` 大字：DESIGN_VARIANCE=3, VISUAL_DENSITY=1（单句纪念碑）。一句话立起来，其余全部留白
 
 ## 2. 排版工程
 

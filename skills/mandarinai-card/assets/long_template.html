@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <style>
+  /* KingHwa_OldSong(京華老宋体)是本地字体,绝大多数机器没有——
+     Noto Serif SC 是保证衬线气质的 webfont 兜底 */
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600;700&display=swap');
+
   :root {
     --bg: {{BG_COLOR}};
     --text: #1D1D1F;
@@ -10,7 +14,7 @@
     --text-dim: #ACACB0;
     --accent: {{ACCENT_COLOR}};
     --rule: #E5E5EA;
-    --font: 'KingHwa_OldSong', 'PingFang SC', system-ui, sans-serif;
+    --font: 'KingHwa_OldSong', 'Noto Serif SC', 'PingFang SC', system-ui, serif;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -167,7 +171,7 @@
 
   /* ── Drop Cap ── */
   .content .dropcap::first-letter {
-    font: 700 128px/0.82 'KingHwa_OldSong', Georgia, serif;
+    font: 700 128px/0.82 'KingHwa_OldSong', 'Noto Serif SC', Georgia, serif;
     float: left;
     margin: 4px 16px 0 -4px;
     color: var(--accent);

@@ -1,12 +1,12 @@
 # 模具：长图（-l / 默认）
 
-## 步骤 1：读取模板
-
-Read `assets/long_template.html`
-
 ## 步骤 0：长度检查
 
 数一下正文字数。> 约 800 字（或明显超过 3 屏）时停下：除非用户明确坚持单张长图，建议改走 `-m` 多卡（`references/mode-poster.md`）。超长长图加载慢、转发糊、没人滑到底。
+
+## 步骤 1：读取模板
+
+Read `assets/long_template.html`
 
 ## 步骤 2：内容预处理
 
