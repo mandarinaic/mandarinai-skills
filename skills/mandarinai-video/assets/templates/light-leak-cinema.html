@@ -36,6 +36,15 @@
   .mono { font-family:'IBM Plex Mono',monospace; }
   .display { font-family:'EB Garamond','Noto Serif SC',serif; }
   .chip { font-size:10.5px; letter-spacing:0.22em; text-transform:uppercase; }
+  /* finite content animations — the slow push-in sets the auto-probed ~6s length */
+  @keyframes push { from { transform: scale(1.06) } to { transform: scale(1) } }
+  .scene { animation: push 6s ease-out forwards; transform-origin: 62% 38%; }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(18px) } }
+  main > .chip { animation: fadeUp 1.1s ease-out .3s backwards; }
+  main h1 { animation: fadeUp 1.3s ease-out .6s backwards; }
+  main p { animation: fadeUp 1.3s ease-out 1.1s backwards; }
+  @keyframes fadeIn { from { opacity:0 } }
+  header, footer { animation: fadeIn 1.2s ease-out 1.6s backwards; }
 </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-6" style="background:#000">

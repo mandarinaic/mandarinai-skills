@@ -63,4 +63,4 @@ node scripts/render.mjs -o ~/Downloads/out.mp4 scene1.html scene2.html scene3.ht
 
 - 输出 MP4 无音轨；需要配音/配乐时提示用户可以用 ffmpeg 合流（`-i video.mp4 -i audio.m4a -c:v copy -shortest`）
 - 不做长视频剪辑、不处理真人素材；取网络视频文字稿用 mandarinai-video-fetch
-- 单场景渲染上限 30 秒，更长的内容拆场景
+- auto 探测的单场景上限 30 秒（`-d` 显式指定最长 120 秒），更长的内容拆场景

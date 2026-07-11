@@ -25,6 +25,15 @@
     background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg,rgba(255,255,255,0.03) 1px, transparent 1px);
     background-size: 64px 64px; z-index:1;
   }
+  /* finite content animations — these set the auto-probed scene length */
+  @keyframes push { from { transform: scale(1.03) } to { transform: scale(1) } }
+  main { animation: push 5s ease-out forwards; }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(24px) } to { opacity:1; transform: translateY(0) } }
+  main > h1 { animation: fadeUp .9s cubic-bezier(.16,1,.3,1) both; }
+  main > p { animation: fadeUp .9s cubic-bezier(.16,1,.3,1) .25s both; }
+  main > div { animation: fadeUp .9s cubic-bezier(.16,1,.3,1) .5s both; }
+  @keyframes fadeIn { from { opacity:0 } }
+  header, footer { animation: fadeIn .8s ease-out .6s backwards; }
   @media (prefers-reduced-motion: reduce) {
     .blob { animation: none }
   }
@@ -38,28 +47,28 @@
   <div class="blob b4"></div>
 
   <header class="absolute top-12 left-12 right-12 flex items-baseline justify-between chip opacity-70 z-10">
-    <span class="text-diff">HTML ANYTHING · FRAME · LIQUID HERO</span>
+    <span class="text-diff">MANDARINAI · FRAME · LIQUID HERO</span>
     <span class="text-diff">AURORA VIOLET</span>
     <span class="text-diff">2026 · 1920 × 1080</span>
   </header>
 
   <main class="relative z-10 text-center max-w-[1100px]">
     <h1 class="text-diff font-black leading-[0.95] tracking-[-0.03em]" style="font-size:clamp(48px,7.5vw,128px)">
-      最好的 HTML, <span class="serif-em">是</span><br/>
-      让读者忘了它是 HTML。
+      学中文, <span class="serif-em">有</span><br/>
+      更聪明的方式。
     </h1>
     <p class="mt-8 text-diff opacity-80 text-[24px] font-medium">
-      HTML Anything · 75 个世界级模板, 0 个 API key
+      MandarinAi · Learn Chinese the Smart Way
     </p>
     <div class="mt-10 inline-flex items-center gap-3 text-[13px] font-semibold chip px-5 py-2 rounded-full text-diff" style="border:1px solid rgba(255,255,255,0.4)">
-      ⌘ Try at localhost:3456
+      ⌘ mandarinai.com
     </div>
   </main>
 
   <footer class="absolute bottom-12 left-12 right-12 flex items-baseline justify-between chip opacity-60 z-10">
     <span class="text-diff">FRAME-LIQUID-BG-HERO</span>
     <span class="text-diff">PREFERS-REDUCED-MOTION SAFE</span>
-    <span class="text-diff">HTMLANYTHING.DEV</span>
+    <span class="text-diff">MANDARINAI.COM</span>
   </footer>
 </body>
 </html>

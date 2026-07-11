@@ -31,19 +31,34 @@ let outPath = 'video.mp4';
 let duration = 'auto';
 let fps = 30;
 let width = 1920, height = 1080;
+const usage = `usage: node scripts/render.mjs [options] scene1.html [scene2.html ...]
+  -o <out.mp4>   output path (default ./video.mp4)
+  -d <sec|auto>  per-scene duration; "auto" probes the animation length (default auto)
+  -f <fps>       frames per second (default 30)
+  -s <WxH>       resolution (default 1920x1080)`;
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
-  if (a === '-o') outPath = argv[++i];
-  else if (a === '-d') duration = argv[++i];
-  else if (a === '-f') fps = Number(argv[++i]) || 30;
-  else if (a === '-s') { const m = /^(\d+)x(\d+)$/.exec(argv[++i] || ''); if (m) { width = +m[1]; height = +m[2]; } }
-  else if (a === '-h' || a === '--help') { console.log('see header of this file'); process.exit(0); }
+  const next = () => {
+    const v = argv[++i];
+    if (v === undefined) { console.error(`error: missing value for ${a}\n${usage}`); process.exit(1); }
+    return v;
+  };
+  if (a === '-o') outPath = next();
+  else if (a === '-d') duration = next();
+  else if (a === '-f') fps = Number(next()) || 30;
+  else if (a === '-s') { const m = /^(\d+)x(\d+)$/.exec(next()); if (m) { width = +m[1]; height = +m[2]; } }
+  else if (a === '-h' || a === '--help') { console.log(usage); process.exit(0); }
   else scenes.push(resolve(a));
 }
-if (!scenes.length) { console.error('error: no input HTML given'); process.exit(1); }
+if (!scenes.length) { console.error(`error: no input HTML given\n${usage}`); process.exit(1); }
 for (const s of scenes) if (!existsSync(s)) { console.error(`error: not found: ${s}`); process.exit(1); }
 const explicit = duration !== 'auto';
-const explicitSec = explicit ? Math.max(0.5, Number(duration)) : 0;
+let explicitSec = 0;
+if (explicit) {
+  const n = Number(duration);
+  if (!Number.isFinite(n) || n <= 0) { console.error(`error: -d expects seconds or "auto", got: ${duration}`); process.exit(1); }
+  explicitSec = Math.min(120, Math.max(0.5, n));
+}
 
 const { chromium } = await import('playwright').catch(() => {
   console.error('error: playwright not installed. Run in this skill dir: npm install && npx playwright install chromium');
@@ -167,13 +182,16 @@ async function renderScene(browser, htmlPath, mp4Path) {
   // lead-in trimming over-seeks. The CSS freeze guarantees everything before
   // unfreeze is a still first frame, so the recording window we waited for is
   // exactly the tail of the file.
+  // tpad always: a scene that never repaints (static frame) yields a webm far
+  // shorter than totalSec, and -t alone cannot extend it — clone the last
+  // frame out to the target length, then cut.
   const webmSec = await ffprobeDuration(webm).catch(() => 0);
   const seekSec = webmSec > totalSec + 0.15 ? Math.max(0, webmSec - totalSec - 0.1) : 0;
   await ffmpeg([
     '-y',
     ...(seekSec > 0 ? ['-ss', seekSec.toFixed(3)] : []),
     '-i', webm,
-    ...(explicit ? ['-vf', `tpad=stop_mode=clone:stop_duration=${totalSec}`] : []),
+    '-vf', `tpad=stop_mode=clone:stop_duration=${totalSec}`,
     '-t', String(totalSec),
     '-r', String(fps),
     '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'medium', '-crf', '20',

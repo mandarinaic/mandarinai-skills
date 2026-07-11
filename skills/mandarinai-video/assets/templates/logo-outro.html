@@ -3,22 +3,23 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
-<title>Logo Outro · HTML Anything</title>
+<title>Logo Outro · MandarinAi</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700;800;900&family=Inter:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
 <style>
   body {
     font-family:'Inter Tight','Noto Sans SC',system-ui,sans-serif;
-    background: radial-gradient(circle at 50% 45%, #1a1535 0%, #08090c 70%);
+    background: radial-gradient(circle at 50% 45%, #12264f 0%, #05070d 70%);
     color:#f5f5f7;
     margin:0;
     min-height:100vh;
     overflow:hidden;
   }
-  .accent { color:#7c5cff; }
-  .ribbon { background:#7c5cff; }
+  /* MandarinAi brand: blue #1b46a2 (lightened to #4a7fd6 on dark bg), accent yellow #ffc107 */
+  .accent { color:#ffc107; }
+  .ribbon { background:#ffc107; }
   @keyframes pieceIn { 0% { opacity:0; transform: scale(1.4) translate(var(--dx, 0), var(--dy, 0)) } 100% { opacity:1; transform: scale(1) translate(0,0) } }
-  @keyframes glow { from { filter: drop-shadow(0 0 0 transparent) } to { filter: drop-shadow(0 0 32px rgba(124,92,255,0.6)) } }
+  @keyframes glow { from { filter: drop-shadow(0 0 0 transparent) } to { filter: drop-shadow(0 0 32px rgba(255,193,7,0.35)) } }
   .piece { animation: pieceIn 1s cubic-bezier(.34,1.56,.64,1) both; }
   .piece:nth-child(1){--dx:-80px;--dy:-40px;animation-delay:0s}
   .piece:nth-child(2){--dx:60px;--dy:-50px;animation-delay:.08s}
@@ -30,11 +31,14 @@
   .brand { animation: fadeUp .8s ease-out 1.4s both; }
   .tagline { animation: fadeUp .8s ease-out 1.7s both; }
   .meta { animation: fadeUp .6s ease-out 2.1s both; }
-  /* shimmer */
-  @keyframes shimmer { 0% { background-position:-200% 0 } 100% { background-position:200% 0 } }
+  /* shimmer: solid base layer + sweeping highlight, both clipped to text,
+     so the wordmark stays visible after the sweep finishes */
+  @keyframes shimmer { 0% { background-position:-200% 0, 0 0 } 100% { background-position:200% 0, 0 0 } }
   .shimmer {
-    background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%);
-    background-size: 200% 100%;
+    background:
+      linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.5) 50%, transparent 70%),
+      linear-gradient(#f5f5f7, #f5f5f7);
+    background-size: 200% 100%, 100% 100%;
     -webkit-background-clip:text; background-clip:text; color:transparent;
     animation: shimmer 1.8s ease-out 1.9s 1 both;
   }
@@ -43,33 +47,33 @@
 <body class="flex flex-col items-center justify-center relative">
   <div class="ribbon absolute top-0 left-0 right-0" style="height:4px"></div>
 
-  <!-- logo -->
-  <div class="logo-wrap relative" style="width:140px;height:140px">
-    <svg viewBox="0 0 140 140" class="absolute inset-0">
-      <!-- 5 geometric pieces forming an "H" -->
-      <rect class="piece" x="20" y="20" width="20" height="100" fill="#7c5cff"/>
-      <rect class="piece" x="100" y="20" width="20" height="100" fill="#7c5cff"/>
-      <rect class="piece" x="40" y="60" width="60" height="20" fill="#f5f5f7"/>
-      <circle class="piece" cx="30" cy="20" r="10" fill="#7c5cff"/>
-      <circle class="piece" cx="110" cy="120" r="10" fill="#f5f5f7"/>
+  <!-- logo — 改造点：换成真实品牌 logo（SVG 或 data URI 图片） -->
+  <div class="logo-wrap relative" style="width:150px;height:140px">
+    <svg viewBox="0 0 150 140" class="absolute inset-0">
+      <!-- 5 geometric pieces forming an "M" -->
+      <rect class="piece" x="18" y="22" width="20" height="96" fill="#4a7fd6"/>
+      <rect class="piece" x="112" y="22" width="20" height="96" fill="#4a7fd6"/>
+      <polygon class="piece" points="38,22 56,22 82,92 64,92" fill="#f5f5f7"/>
+      <polygon class="piece" points="112,22 94,22 68,92 86,92" fill="#f5f5f7"/>
+      <circle class="piece" cx="75" cy="112" r="9" fill="#ffc107"/>
     </svg>
   </div>
 
   <!-- brand -->
   <h1 class="brand mt-10 font-black tracking-[-0.02em] leading-[0.95]" style="font-size:84px">
-    <span class="shimmer">HTML Anything</span>
+    <span class="shimmer">MandarinAi</span>
   </h1>
 
   <!-- tagline -->
   <p class="tagline mt-4 text-[24px] opacity-70 font-medium">
-    Anything → <em class="not-italic accent">beautiful HTML</em>
+    Learn Chinese <em class="not-italic accent">the Smart Way</em>
   </p>
 
   <!-- CTA / meta -->
   <div class="meta mt-12 flex items-center gap-6 text-[11px] uppercase tracking-[0.18em] opacity-50">
-    <span>htmlanything.dev</span>
+    <span>mandarinai.com</span>
     <span class="opacity-40">·</span>
-    <span>@htmlanything</span>
+    <span>MandarinAi中文学习网</span>
     <span class="opacity-40">·</span>
     <span>2026</span>
   </div>

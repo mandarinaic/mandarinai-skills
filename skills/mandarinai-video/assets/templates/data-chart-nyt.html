@@ -14,9 +14,15 @@
   .nyt-red-fill { fill:#a91d1d; }
   .kicker { font-size:11px; letter-spacing:0.14em; text-transform:uppercase; }
   @keyframes draw { from { stroke-dashoffset: 1000 } to { stroke-dashoffset: 0 } }
-  .line { stroke-dasharray:1000; animation: draw 1.4s ease-out forwards; animation-delay: .4s; opacity:0; animation-fill-mode: forwards; }
-  .line { animation: draw 1.4s ease-out .4s forwards, fadeIn .1s linear .4s forwards; }
   @keyframes fadeIn { to { opacity:1 } }
+  .line { stroke-dasharray:1000; opacity:0; animation: draw 1.4s ease-out .4s forwards, fadeIn .1s linear .4s forwards; }
+  .line-accent { stroke-dasharray:1000; opacity:0; animation: draw .9s ease-out 1.6s forwards, fadeIn .1s linear 1.6s forwards; }
+  /* staggered reveals; the source footer lands last and anchors the ~5s scene length */
+  .reveal { opacity:0; animation: fadeIn .5s ease-out forwards; }
+  @keyframes fadeInDim { to { opacity:0.6 } }
+  .reveal-dim { opacity:0; animation: fadeInDim .5s ease-out forwards; }
+  .r1 { animation-delay: .2s } .r2 { animation-delay: 1.2s } .r3 { animation-delay: 1.9s }
+  .r4 { animation-delay: 2.4s } .r5 { animation-delay: 3.0s } .r6 { animation-delay: 4.2s }
 </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-12">
@@ -26,7 +32,7 @@
       <div class="kicker opacity-60 mono">FRAME 04 · CHART</div>
     </header>
 
-    <h1 class="serif mt-3 leading-[1.05] font-medium" style="font-size:clamp(36px,4.4vw,68px)">
+    <h1 class="serif mt-3 leading-[1.05] font-medium reveal r1" style="font-size:clamp(36px,4.4vw,68px)">
       AI agent 月活在 <span class="nyt-red italic">2024 之后</span> 进入两段抛物线 ——<br/>
       第一段由云端 Claude / GPT 推动, 第二段由本地 CLI agent 普及。
     </h1>
@@ -53,10 +59,10 @@
       <polyline class="line" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"
         points="60,410 180,405 300,395 420,380 540,355 660,320 780,270 900,195 1020,90" />
       <!-- accent inflection -->
-      <polyline fill="none" stroke="#a91d1d" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="6 5"
+      <polyline class="line-accent" fill="none" stroke="#a91d1d" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"
         points="780,270 900,195 1020,90" />
       <!-- data points -->
-      <g>
+      <g class="reveal r2">
         <circle cx="60" cy="410" r="4" fill="#1a1a1a"/>
         <circle cx="180" cy="405" r="4" fill="#1a1a1a"/>
         <circle cx="300" cy="395" r="4" fill="#1a1a1a"/>
@@ -68,18 +74,18 @@
         <circle cx="1020" cy="90" r="6" class="nyt-red-fill"/>
       </g>
       <!-- annotations -->
-      <g class="mono" font-size="11" fill="#1a1a1a">
+      <g class="mono reveal r3" font-size="11" fill="#1a1a1a">
         <text x="784" y="250">2024 · 310M</text>
         <text x="894" y="175" class="nyt-red-fill">2025 · 468M</text>
         <text x="1010" y="70" class="nyt-red-fill" text-anchor="end">2026 · 640M</text>
       </g>
       <!-- inflection callout -->
-      <g class="serif" font-style="italic" fill="#a91d1d">
+      <g class="serif reveal r4" font-style="italic" fill="#a91d1d">
         <text x="800" y="380" font-size="14">⤴ Inflection point</text>
         <text x="800" y="398" font-size="14">local CLI agents普及</text>
       </g>
       <!-- x labels -->
-      <g class="mono" font-size="11" fill="#1a1a1a" opacity="0.6">
+      <g class="mono reveal-dim r5" font-size="11" fill="#1a1a1a">
         <text x="60" y="445" text-anchor="middle">'18</text>
         <text x="180" y="445" text-anchor="middle">'19</text>
         <text x="300" y="445" text-anchor="middle">'20</text>
@@ -92,9 +98,9 @@
       </g>
     </svg>
 
-    <footer class="mt-3 flex items-baseline justify-between mono text-[10.5px] opacity-60">
-      <span>Source · Synthesized industry estimates, 2026-05</span>
-      <span>Chart by HTML-Anything</span>
+    <footer class="mt-3 flex items-baseline justify-between mono text-[10.5px] reveal r6">
+      <span>Source · Demo data — replace with real data & a real source line</span>
+      <span>Chart by MandarinAi</span>
       <span>NYT-STYLE · FRAME-DATA-CHART-NYT</span>
     </footer>
   </article>

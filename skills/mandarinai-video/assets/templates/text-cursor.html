@@ -3,9 +3,11 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
-<title>VFX Text Cursor · Opening</title>
+<title>VFX Text Cursor · Terminal Typewriter</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;700;800;900&family=Noto+Sans+SC:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/TextPlugin.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;700;800;900&family=Noto+Sans+SC:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
 <style>
   body { font-family:'Inter Tight','Noto Sans SC',system-ui,sans-serif; background:#06070a; color:#f5f5f7; margin:0; min-height:100vh; overflow:hidden; position:relative; }
   .vignette { position:absolute; inset:0; background: radial-gradient(circle at center, transparent 50%, rgba(0,0,0,0.8) 100%); z-index:1; }
@@ -14,15 +16,17 @@
   .mono { font-family:'JetBrains Mono',ui-monospace,monospace; }
   .chip { font-size:11px; letter-spacing:0.18em; text-transform:uppercase; }
   @keyframes blink { 0%, 50% { opacity:1 } 51%, 100% { opacity:0 } }
-  .cursor { display:inline-block; width:18px; height:1.05em; background:#ff3b6f; margin-left:6px; vertical-align:text-bottom; animation: blink 1s steps(1) infinite;
-    box-shadow: 0 0 24px #ff3b6f, 0 0 8px #ff3b6f, 60px 0 80px rgba(255,59,111,0.6); }
+  .cursor { display:inline-block; width:16px; height:1.05em; background:#ff3b6f; margin-left:4px; vertical-align:text-bottom; animation: blink 1s steps(1) infinite;
+    box-shadow: 0 0 24px #ff3b6f, 0 0 8px #ff3b6f; }
   .chroma {
     text-shadow:
       3px 0 #00d4ff,
       -3px 0 #ff3b6f,
       0 0 40px rgba(255,59,111,0.3);
   }
-  .text-line { position:relative; }
+  .term-line { min-height:1.9em; white-space:pre-wrap; }
+  .prompt { color:#00d4ff; }
+  .ok { color:#5eea8d; }
   /* directional light leaks */
   .ray { position:absolute; mix-blend-mode:screen; pointer-events:none; z-index:1; }
   .ray-1 { top:30%; left:-10%; width:60%; height:6px; transform:rotate(-12deg); background:linear-gradient(90deg, transparent, rgba(255,59,111,0.6), transparent); filter: blur(8px); }
@@ -43,24 +47,54 @@
   <div class="ray ray-2"></div>
   <div class="ray ray-3"></div>
 
-  <main class="relative z-10 text-center max-w-[1280px] px-12">
-    <h1 class="chroma font-black leading-[1.05] tracking-[-0.02em]" style="font-size:clamp(48px,7vw,108px)">
-      Markdown 是给作者的<br/>
-      中间过程, <span style="color:#ff3b6f">HTML</span> 才是<br/>
-      给读者的最终形态<span class="cursor"></span>
+  <main class="relative z-10 w-full max-w-[1240px] px-12">
+    <div class="mono text-[26px] leading-[1.9] opacity-90">
+      <div class="term-line" id="l1"><span class="prompt">$ </span><span class="t"></span></div>
+      <div class="term-line" id="l2"><span class="t"></span></div>
+      <div class="term-line" id="l3"><span class="t"></span></div>
+      <div class="term-line" id="l4"><span class="t"></span></div>
+    </div>
+    <h1 class="chroma font-black leading-[1.1] tracking-[-0.02em] mt-12" style="font-size:clamp(40px,5.5vw,84px)">
+      <span class="t" id="l5"></span>
     </h1>
-    <p class="mt-10 text-[22px] opacity-60 font-medium">
-      — Claude Code 团队, 2026
-    </p>
   </main>
 
   <div class="vignette"></div>
   <div class="grain"></div>
 
   <footer class="absolute bottom-12 left-12 right-12 flex items-baseline justify-between chip opacity-40 z-10 mono">
-    <span>HTML-ANYTHING · VFX-TEXT-CURSOR</span>
+    <span>MANDARINAI · VFX-TEXT-CURSOR</span>
     <span>HOT PINK × CYAN CHROMATIC</span>
     <span>REC ●</span>
   </footer>
+
+<script>
+  // Typewriter via GSAP TextPlugin, registered as a paused master timeline —
+  // render.mjs plays it at t=0 and measures its totalDuration for the scene
+  // length (see references/authoring.md).
+  gsap.registerPlugin(TextPlugin);
+
+  // 改造点：换掉这些行。speed 是每秒字符数。
+  const LINES = [
+    { sel: '#l1 .t', text: 'node scripts/render.mjs -o out.mp4 intro.html chart.html outro.html', speed: 34 },
+    { sel: '#l2 .t', text: 'scene 1/3 · glitch-title    · 4.7s @ 30fps ✓', speed: 46 },
+    { sel: '#l3 .t', text: 'scene 2/3 · data-chart-nyt  · 5.0s @ 30fps ✓', speed: 46 },
+    { sel: '#l4 .t', text: 'MP4 → ~/Downloads/out.mp4 · 14.6s', speed: 40 },
+    { sel: '#l5',    text: 'HTML 即视频。', speed: 7 },
+  ];
+
+  const cursor = document.createElement('span');
+  cursor.className = 'cursor';
+
+  const tl = gsap.timeline({ paused: true });
+  for (const line of LINES) {
+    const el = document.querySelector(line.sel);
+    tl.call(() => el.parentNode.insertBefore(cursor, el.nextSibling), null, '+=0.25');
+    tl.to(el, { text: line.text, duration: line.text.length / line.speed, ease: 'none' });
+  }
+  tl.to({}, { duration: 1.2 }); // hold on the finished frame
+
+  window.__timelines = { main: tl };
+</script>
 </body>
 </html>

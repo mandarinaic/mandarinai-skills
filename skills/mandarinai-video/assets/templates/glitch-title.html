@@ -33,6 +33,16 @@
     97% { transform: translate(0,0) }
   }
   .glitch-host { position:relative; animation: glitch 4s infinite; }
+  /* finite content animations — these set the auto-probed scene length */
+  @keyframes sceneIn { from { opacity:0; transform:scale(1.05) } to { opacity:1; transform:scale(1) } }
+  main { animation: sceneIn .9s cubic-bezier(.16,1,.3,1) both; }
+  @keyframes fadeIn { from { opacity:0 } }
+  header, footer { animation: fadeIn .8s ease-out .5s backwards; }
+  /* one-shot chromatic sweep near the end — doubles as the ~5s duration anchor */
+  @keyframes sweep { 0%, 86% { transform: translateX(-120%) } 100% { transform: translateX(120%) } }
+  .sweep { position:absolute; inset:0; z-index:6; pointer-events:none; mix-blend-mode:screen;
+    background: linear-gradient(100deg, transparent 42%, rgba(0,240,255,0.16) 49%, rgba(255,43,214,0.16) 52%, transparent 59%);
+    animation: sweep 4.4s linear forwards; }
   .layer { position:absolute; inset:0; mix-blend-mode:screen; }
   .layer-c { color:#00f0ff; transform: translate(-3px, 1px); }
   .layer-m { color:#ff2bd6; transform: translate(3px, -1px); }
@@ -88,11 +98,12 @@
     </p>
   </main>
 
+  <div class="sweep"></div>
   <div class="grain"></div>
   <div class="vignette"></div>
 
   <footer class="absolute bottom-10 left-12 right-12 flex items-baseline justify-between mono text-[11px] opacity-50 z-10 tracking-[0.16em]">
-    <span>HTML-ANYTHING / VFX</span>
+    <span>MANDARINAI · VFX</span>
     <span style="color:#ff2bd6">CHROMATIC · CYAN × MAGENTA</span>
     <span class="mono">⏵ 00:14:32:08</span>
   </footer>
