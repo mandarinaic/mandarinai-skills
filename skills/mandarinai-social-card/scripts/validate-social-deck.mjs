@@ -53,7 +53,15 @@ const ctx = await browser.newContext({
   deviceScaleFactor: 1,
 });
 const page = await ctx.newPage();
-await page.goto(url, { waitUntil: "networkidle" });
+// Don't gate on the network: "networkidle" can hang past the 30s navigation
+// timeout when a font CDN stalls or CJK subsets trickle in. Parse the DOM,
+// then give stylesheets + webfonts a bounded window and degrade gracefully.
+await page.goto(url, { waitUntil: "domcontentloaded" });
+await page.waitForLoadState("load", { timeout: 20000 }).catch(() => {});
+await page.evaluate(() => Promise.race([
+  document.fonts ? document.fonts.ready : Promise.resolve(),
+  new Promise((resolve) => setTimeout(resolve, 15000)),
+])).catch(() => {});
 await page.waitForTimeout(1200);
 
 const style = styleOverride || await page.evaluate(() => {

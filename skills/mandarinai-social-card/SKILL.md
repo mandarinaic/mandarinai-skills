@@ -198,7 +198,7 @@ For material-first Live Photo puzzle cards, let the video assets lead. Use littl
 
 Do not write HTML from scratch. Pick one seed template based on the style mode chosen in Step 3:
 
-- Editorial Magazine × E-ink → copy `assets/template-editorial-card.html` into the task folder as `index.html`.
+- Editorial Magazine × E-ink → copy `assets/template-editorial-card.html` into the task folder as `index.html`, **and copy `assets/magazine-bg-webgl.js` into the task folder's `assets/`** — the seed hard-references it (`<script src="assets/magazine-bg-webgl.js">`); without it every poster silently loses the ink-flow atmosphere layer and violates the flat-paper non-negotiable.
 - Swiss International → copy `assets/template-swiss-card.html` into the task folder as `index.html`.
 
 The seed already wires up: font loading, theme tokens, all three poster sizes (`.poster.xhs` / `.poster.square` / `.poster.wide`), the pair-preview frame, grain/background layers, and all class definitions referenced by the layout recipes.
