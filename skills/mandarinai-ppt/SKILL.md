@@ -181,18 +181,21 @@ node <SKILL_ROOT>/scripts/fetch-stock-image.mjs --query "<关键词>" \
 **根据 Step 1 选定的风格,拷贝对应的模板**到目标位置（通常是 `项目/XXX/ppt/index.html`），同时在同级建一个 `images/` 文件夹准备接图片。
 
 ```bash
-mkdir -p "项目/XXX/ppt/images"
+mkdir -p "项目/XXX/ppt/images" "项目/XXX/ppt/assets"
 
 # 风格 A · 电子杂志风
 cp "<SKILL_ROOT>/assets/template.html" "项目/XXX/ppt/index.html"
 
 # 或 风格 B · 瑞士国际主义风
 cp "<SKILL_ROOT>/assets/template-swiss.html" "项目/XXX/ppt/index.html"
+
+# 两种风格都要:动效引擎本地副本(模板里 import('./assets/motion.min.js') 指向它)
+cp "<SKILL_ROOT>/assets/motion.min.js" "项目/XXX/ppt/assets/motion.min.js"
 ```
 
 两个 `template*.html` 都是**完整可运行**的文件——CSS、WebGL shader、翻页 JS、字体/图标 CDN 全已预设好,只有 `<!-- SLIDES_HERE -->` 占位符等待你填充 slide 内容。
 
-**注意**:风格 A 和 B **不能混用**。layouts.md 里的类（如 `.h-hero` 衬线大标题、`.display-zh` 等）只在 template.html 有定义；layouts-swiss.md 里的类（如 `.kpi-hero`、`.accent-block`、`.span-N`、`.dots` 等）只在 template-swiss.html 有定义。一份 deck 只能选一套。
+**注意**:风格 A 和 B **不能混用**。layouts.md 里的类（如 `.h-hero` 衬线大标题、`.stat-card` 等）只在 template.html 有定义；layouts-swiss.md 里的类（如 `.kpi-hero`、`.accent-block`、`.span-N`、`.dots` 等）只在 template-swiss.html 有定义。一份 deck 只能选一套。
 
 #### 2.1 · 必改占位符（**容易漏**）
 
@@ -385,6 +388,12 @@ open "项目/XXX/ppt/index.html"
 
 不需要本地服务器。图片走相对路径 `images/xxx.png`。
 
+**动效注意**:`file://` 打开时浏览器会以 CORS 拦截本地 module import,动效自动 fallback 到 jsDelivr CDN(联网即正常)。需要**离线演示**动效时必须走本地服务器:
+
+```bash
+cd "项目/XXX/ppt" && python3 -m http.server 8000   # http://localhost:8000
+```
+
 ### Step 6 · 迭代
 
 根据用户反馈修改——模板的 CSS 已经高度参数化，90% 的调整都是改 inline style（字号 `font-size:Xvw` / 高度 `height:Yvh` / 间距 `gap:Zvh`）。
@@ -400,7 +409,7 @@ mandarinai-ppt/
 │   ├── template.html         ← 风格 A · 电子杂志风模板（种子文件）
 │   ├── template-swiss.html   ← 风格 B · 瑞士国际主义风模板（种子文件）
 │   ├── screenshot-backgrounds/ ← 截图美化内置背景(WebP):style-a 5 套 / style-b 4 套
-│   └── motion.min.js         ← Motion One 本地副本（离线兜底,约 64KB,共用）
+│   └── motion.min.js         ← Motion One 本地副本（Step 2 拷到 deck 旁,http:// 下本地加载,约 64KB,共用）
 ├── scripts/
 │   └── validate-swiss-deck.mjs ← 风格 B 静态校验:登记版式、图片槽位、SVG 文本、标题对齐
 └── references/
@@ -433,7 +442,7 @@ mandarinai-ppt/
 7. 细节调整时读 `components.md` 查组件(含 Motion 动效系统章节,主要服务风格 A;风格 B 的组件细节在 `layouts-swiss.md` 附录)
 8. 生成后先运行 `node scripts/validate-swiss-deck.mjs path/to/index.html`,再读 `checklist.md` 自检
 
-**动效相关**:模板已把 Motion One 的加载和 recipe 逻辑内嵌到底部 module script。你不需要改 JS,只需要按 `layouts.md` / `layouts-swiss.md` 的骨架在 HTML 里加 `data-anim` / `data-animate` 即可。离线演示靠 `assets/motion.min.js`,断网时自动降级为"无动画但内容可读"。风格 B 模板必须保留 `B` 键低功耗模式:切换后停止 WebGL/ASCII canvas RAF,取消正在运行的 Web Animations,并把当前页内容直接 reveal 到静态最终态。
+**动效相关**:模板已把 Motion One 的加载和 recipe 逻辑内嵌到底部 module script。你不需要改 JS,只需要按 `layouts.md` / `layouts-swiss.md` 的骨架在 HTML 里加 `data-anim` / `data-animate` 即可。加载顺序:本地 `./assets/motion.min.js`(Step 2 已拷到 deck 旁,经 `http://` 访问时生效;`file://` 下被浏览器 CORS 拦截)→ jsDelivr CDN → 双双失败时自动降级为"无动画但内容可读"。离线演示见 Step 5 的本地服务器说明。风格 B 模板必须保留 `B` 键低功耗模式:切换后停止 WebGL/ASCII canvas RAF,取消正在运行的 Web Animations,并把当前页内容直接 reveal 到静态最终态。
 
 ## 核心设计原则（哲学）
 

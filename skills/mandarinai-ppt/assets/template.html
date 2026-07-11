@@ -26,6 +26,9 @@
     --serif-body-en:"Source Serif 4",Georgia,serif;
     --serif-zh:"Noto Serif SC",source-han-serif-sc,serif;
     --sans-zh:"Noto Sans SC",source-han-sans-sc,sans-serif;
+
+    /* ============ 布局安全区(跨主题固定) ============ */
+    --nav-safe-bottom:8vh;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{width:100%;height:100%;overflow:hidden;background:var(--ink);color:var(--paper);font-family:var(--sans-zh);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
@@ -192,6 +195,9 @@
   #nav .dot:hover{background:rgba(255,255,255,.5);transform:scale(1.15)}
   #nav .dot.active{background:rgba(255,255,255,.95);width:22px;border-radius:999px}
   body.light-bg #nav{background:rgba(255,255,255,.25)}
+  /* 底部分页安全区:内容需要贴底时给主体容器加,避免最低处碰到分页组件 */
+  .nav-safe-bottom{padding-bottom:var(--nav-safe-bottom)}
+  .nav-safe-bottom-tight{padding-bottom:calc(var(--nav-safe-bottom) * .65)}
   body.light-bg #nav .dot{background:rgba(var(--ink-rgb),.25)}
   body.light-bg #nav .dot.active{background:rgba(var(--ink-rgb),.9)}
   #hint{position:fixed;bottom:3vh;right:3vw;z-index:30;font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.4;mix-blend-mode:difference;color:#aaa}
@@ -643,8 +649,10 @@ function go(n){
   nav.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
   /* 主题切换：优先读 data-theme，其次从 class（light/dark）推断 */
   const el=slides[idx];
-  const th=el.dataset.theme || (el.classList.contains('light')?'light':(el.classList.contains('dark')?'dark':'dark'));
-  document.body.classList.toggle('light-bg',th==='light');
+  if(el){
+    const th=el.dataset.theme || (el.classList.contains('light')?'light':(el.classList.contains('dark')?'dark':'dark'));
+    document.body.classList.toggle('light-bg',th==='light');
+  }
   /* 动效：翻页过渡中段触发当前页的入场动画（由 motion-boot 注册） */
   if(window.__playSlide) setTimeout(()=>window.__playSlide(idx), 450);
   lock=true;setTimeout(()=>lock=false,700);
@@ -732,8 +740,8 @@ addEventListener('touchend',e=>{
 
 go(0);
 </script>
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-<script>lucide.createIcons();</script>
+<script src="https://unpkg.com/lucide@1.24.0/dist/umd/lucide.min.js"></script>
+<script>window.lucide&&lucide.createIcons();</script>
 
 <!-- ============ Motion One 动效引擎（本地优先,CDN 兜底） ============
      加载策略:先 ./assets/motion.min.js(本地,离线可用),失败 fallback 到 jsDelivr CDN
