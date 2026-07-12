@@ -27,6 +27,11 @@ answers would change the structure of the output. Do not start on guesses.
 - **Claude Code**: may use AskUserQuestion for clarification; Read/Write/Bash for files.
 - **Codex / Gemini CLI**: ask in plain conversation; do not assume Claude-specific tools
   exist. If a tool is unavailable, fall back to shell commands.
+- **Generative capabilities (image gen, TTS, …)**: prefer the agent's native tool when it
+  has one (ChatGPT/Codex image tool, Gemini image output, an MCP) — zero config, no env
+  vars. Only require API keys (`OPENAI_API_KEY`, …) on the script path for CLI agents
+  without the native tool, and degrade to delivering ready-to-paste prompts when neither
+  exists. Never phrase the skill so that a missing env var blocks a natively capable host.
 
 ### Step 2 · Produce the output
 

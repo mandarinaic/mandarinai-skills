@@ -39,7 +39,7 @@ This skill does not replace mandarinai-ppt or the mandarinai-social-card text-la
    - Scientific mechanism: object, parts, forces, reactions, or biological process.
    - Text scene: a literary, historical, or everyday scene that anchors an abstract idea.
 7. Write one image prompt per illustration. Make the prompt describe exact label text or chart data, aspect ratio, safe margins, references used, and shared house visual style.
-8. Generate the images. Preference order: (a) the bundled `scripts/generate-image.mjs` when `OPENAI_API_KEY` or `GEMINI_API_KEY` is set (see Generating Images below); (b) a built-in image tool or image-generation MCP available in the current agent environment. If neither exists, say so, deliver the finished prompt plan in `PROMPTS.md`, and tell the user to paste each prompt into their image tool (GPT-Image, Gemini, Midjourney, etc.) — do not silently skip generation.
+8. Generate the images. Preference order: (a) the current agent's **native image generation capability** — a built-in image tool (ChatGPT/Codex GPT-Image tool, Gemini image output) or an image-generation MCP — zero config, no env vars; (b) the bundled `scripts/generate-image.mjs` when no native tool exists and `OPENAI_API_KEY` or `GEMINI_API_KEY` is set (the CLI-agent path — see Generating Images below). If you can produce images directly as a built-in tool, use it; the env keys exist only for CLI agents that can't. If neither path exists, say so, deliver the finished prompt plan in `PROMPTS.md`, and tell the user to paste each prompt into their image tool (GPT-Image, Gemini, Midjourney, etc.) — do not silently skip generation.
 9. Inspect each image. If labels are wrong, chart data is wrong, reference cues are misleading, unreadable, or clipped, regenerate with stricter constraints.
 10. Save prompts and final image paths in the task folder so the image set can be reproduced.
 
@@ -69,6 +69,13 @@ Read `references/characters.md` when the content calls for a MandarinAi mascot, 
 Read `references/qa-checklist.md` before delivering final images.
 
 ## Generating Images
+
+Whichever generation path runs (native tool, MCP, or bundled script), the same contract holds:
+
+- Log every image's provider, model, ratio, and full prompt to `<out>/PROMPTS.md` (the bundled script does this automatically; on the native-tool path, append the entries yourself).
+- Respect the ratio table in `references/visual-style.md` and the expect-to-crop rule for providers with fixed sizes.
+- Run the inspect/regenerate QA loop from the workflow on every image.
+- For MandarinAi characters, keep them on-model: on the native-tool path, attach the character sheet from `assets/characters/` as a reference image in the tool call / multimodal input and keep the "match the reference sheet exactly" prompt suffix — the equivalent of the script's `--ref`.
 
 The bundled script calls the OpenAI or Gemini image API directly — no SDK, Node 18+ only:
 

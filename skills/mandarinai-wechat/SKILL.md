@@ -140,7 +140,7 @@ version: "1.0.0"
      --prompt "<角色名 + 场景动作 + match the reference sheet exactly>" --ratio 16:9 --out assets --name <语义名>
    ```
 
-   需要 `OPENAI_API_KEY` 或 `GEMINI_API_KEY`；**没有 key 时不硬画**——把每处配图的角色选择 + 完整 prompt 写进配图建议交付（用户可自行生成），或改用纯排版分隔（题图卡/金句卡由 mandarinai-wechat-layout 组件承担）。用户说不要角色或指定别的风格，就按用户的来
+   生成路径遵循 mandarinai-illustration 的能力阶梯：**当前环境有原生图像生成能力（ChatGPT/Codex 的内建图像工具、image-gen MCP）就直接用，不需要任何 key**——把角色定案图作为参考图附进工具调用，保持 "match the reference sheet exactly"；没有原生能力时才走上面的脚本（需 `OPENAI_API_KEY` 或 `GEMINI_API_KEY`）。**两条路都没有时不硬画**——把每处配图的角色选择 + 完整 prompt 写进配图建议交付（用户可自行生成），或改用纯排版分隔（题图卡/金句卡由 mandarinai-wechat-layout 组件承担）。用户说不要角色或指定别的风格，就按用户的来
 
    **实景类配图走图库**——当配图位置需要的是实拍照片而非概念图（地点 / 街景 / 食物 / 产品 / 氛围实景，角色隐喻套不上的），且环境里有 `PEXELS_API_KEY` / `UNSPLSH_API_KEY` / `PIXABAY_API_KEY` 中至少一个，用图库脚本取图：
 
