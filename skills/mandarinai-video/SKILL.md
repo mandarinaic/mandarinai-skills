@@ -51,6 +51,7 @@ node scripts/render.mjs -o ~/Downloads/out.mp4 scene1.html scene2.html scene3.ht
 
 - 多个场景自动按顺序拼接；`-d 5` 强制每场景精确 5 秒（不足时定格补齐），默认 `auto` 按动画实际长度
 - `-s 1080x1920` 竖屏；`-f 60` 高帧率
+- 采集模式 `-c`：默认 `frames`（虚拟时钟逐帧截图——时长和帧数精确、不受机器负载影响，约 1 分钟/场景）；`-c screencast` 走实时录屏（快，适合草稿预览；场景里有 `<video>`/`<audio>` 实媒体时**必须**用它——虚拟时钟不驱动媒体播放）
 - 依赖：本目录 `npm install && npx playwright install chromium`，以及 `ffmpeg`（`brew install ffmpeg`）
 - 模板用了 Tailwind CDN 和 Google Fonts，渲染机器需要网络；字体加载有 8 秒上限兜底
 

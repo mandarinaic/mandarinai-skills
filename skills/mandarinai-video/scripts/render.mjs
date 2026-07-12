@@ -7,14 +7,25 @@
  *     -d <sec|auto>  per-scene duration; "auto" probes the animation length (default auto)
  *     -f <fps>       frames per second (default 30)
  *     -s <WxH>       resolution (default 1920x1080)
+ *     -c <mode>      capture: "frames" (deterministic, default) | "screencast"
  *
  * Multiple scenes render individually and are concatenated with ffmpeg.
  * Requires: playwright (npm install in this skill dir) + ffmpeg on PATH.
  *
- * Recording strategy (ported from nexu-io/html-video adapter-hyperframes,
+ * Scene preparation (ported from nexu-io/html-video adapter-hyperframes,
  * Apache-2.0): freeze all CSS animations before parse, wait for web fonts,
  * probe the real animation length (CSS keyframes + finite GSAP tweens),
- * unfreeze as recording t=0, then trim the dead lead-in and encode.
+ * unfreeze as the animation's t=0.
+ *
+ * Capture modes:
+ *   frames      pause Chromium's virtual time at t=0, then per output frame:
+ *               screenshot, advance the clock by exactly 1/fps. CSS, GSAP,
+ *               and rAF animations all follow the virtual clock, so renders
+ *               are frame-exact regardless of machine load (not bit-exact:
+ *               animation sampling keeps a sub-frame ±16ms phase per run).
+ *               Does not drive <video>/<audio> playback — use screencast.
+ *   screencast  real-time Playwright webm recording, then trim/pad. Timing
+ *               is wall-clock (can jitter under load) but plays live media.
  */
 
 import { mkdtemp, readdir, rm, writeFile, mkdir } from 'node:fs/promises';
@@ -31,11 +42,13 @@ let outPath = 'video.mp4';
 let duration = 'auto';
 let fps = 30;
 let width = 1920, height = 1080;
+let capture = 'frames';
 const usage = `usage: node scripts/render.mjs [options] scene1.html [scene2.html ...]
   -o <out.mp4>   output path (default ./video.mp4)
   -d <sec|auto>  per-scene duration; "auto" probes the animation length (default auto)
   -f <fps>       frames per second (default 30)
-  -s <WxH>       resolution (default 1920x1080)`;
+  -s <WxH>       resolution (default 1920x1080)
+  -c <mode>      capture: "frames" (deterministic, default) | "screencast" (for <video>/<audio> scenes)`;
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
   const next = () => {
@@ -47,6 +60,10 @@ for (let i = 0; i < argv.length; i++) {
   else if (a === '-d') duration = next();
   else if (a === '-f') fps = Number(next()) || 30;
   else if (a === '-s') { const m = /^(\d+)x(\d+)$/.exec(next()); if (m) { width = +m[1]; height = +m[2]; } }
+  else if (a === '-c') {
+    capture = next();
+    if (capture !== 'frames' && capture !== 'screencast') { console.error(`error: -c expects "frames" or "screencast", got: ${capture}\n${usage}`); process.exit(1); }
+  }
   else if (a === '-h' || a === '--help') { console.log(usage); process.exit(0); }
   else scenes.push(resolve(a));
 }
@@ -85,12 +102,13 @@ function ffprobeDuration(path) {
   });
 }
 
-async function renderScene(browser, htmlPath, mp4Path) {
-  const recordDir = await mkdtemp(join(tmpdir(), 'av-rec-'));
+// Open a scene, freeze animations through load, wait for fonts, probe length.
+// Everything here runs on the real clock; the caller decides how to capture.
+async function openScene(browser, htmlPath, recordDir) {
   const context = await browser.newContext({
     viewport: { width, height },
     deviceScaleFactor: 1,
-    recordVideo: { dir: recordDir, size: { width, height } },
+    ...(recordDir ? { recordVideo: { dir: recordDir, size: { width, height } } } : {}),
   });
   const page = await context.newPage();
 
@@ -160,13 +178,79 @@ async function renderScene(browser, htmlPath, mp4Path) {
     if (!explicit && needed > totalSec) totalSec = needed;
   } catch { /* keep fallback duration */ }
 
-  // Drive paused GSAP master timelines (multi-composition convention), then
-  // release the CSS freeze — this moment is the animation's true t=0.
-  await page.evaluate(() => {
+  return { context, page, totalSec };
+}
+
+// Drive paused GSAP master timelines (multi-composition convention), then
+// release the CSS freeze — this moment is the animation's true t=0.
+function startAnimations(page) {
+  return page.evaluate(() => {
     const tls = window.__timelines || {};
     for (const k of Object.keys(tls)) if (typeof tls[k]?.play === 'function') tls[k].play(0);
     window.__avUnfreeze?.();
   }).catch(() => {});
+}
+
+// Deterministic capture: pause Chromium's virtual time at t=0, then per
+// output frame screenshot + advance the clock by exactly 1/fps. Timers, rAF,
+// performance.now(), CSS and GSAP all follow the virtual clock.
+async function renderSceneFrames(browser, htmlPath, mp4Path) {
+  const { context, page, totalSec } = await openScene(browser, htmlPath);
+  const cdp = await context.newCDPSession(page);
+  await cdp.send('Emulation.setVirtualTimePolicy', { policy: 'pause' });
+  await startAnimations(page);
+
+  const nFrames = Math.max(1, Math.round(totalSec * fps));
+  process.stderr.write(`  capturing ${nFrames} frames (${totalSec.toFixed(1)}s @ ${fps}fps, virtual time)...\n`);
+
+  const enc = spawn('ffmpeg', [
+    '-y', '-f', 'image2pipe', '-framerate', String(fps), '-i', '-',
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'medium', '-crf', '20',
+    '-movflags', '+faststart',
+    mp4Path,
+  ], { stdio: ['pipe', 'ignore', 'pipe'] });
+  enc.stdin.on('error', () => {}); // EPIPE when ffmpeg dies first; encDone reports the cause
+  let encErr = '';
+  enc.stderr.on('data', c => encErr += c);
+  const encDone = new Promise((res, rej) => {
+    enc.on('error', e => rej(e.code === 'ENOENT' ? new Error('ffmpeg not found: brew install ffmpeg') : e));
+    enc.on('exit', c => c === 0 ? res() : rej(new Error(`ffmpeg exited ${c}: ${encErr.slice(-1500)}`)));
+  });
+
+  const frameBudget = 1000 / fps;
+  const capTimeout = (p) => Promise.race([p, new Promise((_, rej) =>
+    setTimeout(() => rej(new Error('frame capture stalled — this scene may need real time (media elements?); retry with -c screencast')), 15000))]);
+  try {
+    for (let i = 0; i < nFrames; i++) {
+      const { data } = await capTimeout(cdp.send('Page.captureScreenshot', { format: 'png', fromSurface: true }));
+      const buf = Buffer.from(data, 'base64');
+      if (!enc.stdin.write(buf)) await new Promise(r => enc.stdin.once('drain', r));
+      if (i < nFrames - 1) {
+        await capTimeout(Promise.all([
+          new Promise(r => cdp.once('Emulation.virtualTimeBudgetExpired', r)),
+          cdp.send('Emulation.setVirtualTimePolicy', { policy: 'advance', budget: frameBudget }),
+        ]));
+      }
+    }
+  } catch (e) {
+    enc.stdin.destroy();
+    enc.kill('SIGKILL');
+    await encDone.catch(() => {});
+    await context.close().catch(() => {});
+    throw e;
+  }
+  enc.stdin.end();
+  await encDone;
+  await context.close();
+  return totalSec;
+}
+
+// Real-time capture: Playwright webm screencast, then trim/pad with ffmpeg.
+// Wall-clock timing (can jitter under load) but drives <video>/<audio>.
+async function renderSceneScreencast(browser, htmlPath, mp4Path) {
+  const recordDir = await mkdtemp(join(tmpdir(), 'av-rec-'));
+  const { context, page, totalSec } = await openScene(browser, htmlPath, recordDir);
+  await startAnimations(page);
 
   process.stderr.write(`  recording ${totalSec.toFixed(1)}s @ ${fps}fps...\n`);
   await page.waitForTimeout(Math.round(totalSec * 1000));
@@ -202,10 +286,30 @@ async function renderScene(browser, htmlPath, mp4Path) {
   return totalSec;
 }
 
+const renderScene = capture === 'screencast' ? renderSceneScreencast : renderSceneFrames;
+
 // ---------- main ----------
 const outAbs = resolve(outPath);
 await mkdir(dirname(outAbs), { recursive: true });
-const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
+// frames mode needs Chromium's deterministic-rendering flags: without them
+// the compositor won't produce frames while virtual time is paused
+// (captureScreenshot stalls), and compositor-thread animations
+// (transform/opacity) would keep running on the real clock.
+const browser = await chromium.launch({
+  headless: true,
+  args: [
+    '--no-sandbox',
+    ...(capture === 'frames' ? [
+      '--run-all-compositor-stages-before-draw',
+      '--disable-new-content-rendering-timeout',
+      '--disable-threaded-animation',
+      '--disable-threaded-scrolling',
+      '--disable-checker-imaging',
+      '--disable-image-animation-resync',
+      '--disable-gpu',
+    ] : []),
+  ],
+});
 try {
   if (scenes.length === 1) {
     const sec = await renderScene(browser, scenes[0], outAbs);
