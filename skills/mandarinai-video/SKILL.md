@@ -36,6 +36,12 @@ version: "0.1.0"
 
 每个场景：**拷贝模板 → 替换为真实内容 → 保持视觉签名**。不要 lorem ipsum，不要占位图。写新场景或大改动画前必读 `references/authoring.md`（时长探测规则、字体、循环动画的写法都在里面）。
 
+用 `logo-outro.html` 时必须把品牌资产拷到场景同目录（模板按相对路径引用）：
+
+```bash
+cp <SKILL_ROOT>/assets/brand/mandarinai-icon.png <场景目录>/   # 宽字标版本：mandarinai-logo.png
+```
+
 ### Step 3 · 渲染
 
 ```bash
@@ -53,14 +59,27 @@ node scripts/render.mjs -o ~/Downloads/out.mp4 scene1.html scene2.html scene3.ht
 1. `ffprobe -v error -show_entries format=duration,size -of default=nw=1 out.mp4` 确认时长量级正确
 2. 在浏览器里打开每个场景 HTML 过一遍：文字没溢出、动画在预期时长内走完
 3. 总时长明显不对（如 5 秒默认值），通常是动画全写成了 `infinite`——读 `references/authoring.md` 的探测规则
+4. **交付诚实**：交付说明/README 里的时长、分辨率、编码只能来自对真实文件的 `ffprobe` 读数。没有渲出 MP4 时，交付第一句必须说明"未渲染成 MP4"，并给出用户本地渲染的确切命令——**绝不描述不存在的产物**
 
 ## 运行环境适配
 
-- **Claude Code / Codex / Gemini CLI**：全部走 shell 执行 `render.mjs`，无平台专用依赖。
+按当前环境的实际能力选渲染路径，降级必须声明，不许悄悄跳过：
+
+- **(a) Node + Playwright + ffmpeg**（Claude Code / Codex CLI / Gemini CLI 本机）：走上面的主工作流 `render.mjs`。
+- **(b) 无浏览器但有 ffmpeg**（ChatGPT / Codex 云沙箱）：`render.mjs` 跑不了，但仍要交出真实 MP4——用环境的原生图像生成能力（沿用 mandarinai-illustration 的能力阶梯）按分镜生成场景静帧，**不要用 PIL/matplotlib 手绘场景**，再用 ffmpeg 拼片：每帧 `zoompan` 缓推成小段，`concat` 拼接，`subtitles` 烧字幕，音轨合流：
+
+  ```bash
+  ffmpeg -loop 1 -t 6 -i s01.png -vf "zoompan=z='1+0.04*on/(30*6)':d=30*6:s=1920x1080,fps=30" -pix_fmt yuv420p s01.mp4
+  ffmpeg -f concat -safe 0 -i list.txt -i ambient.wav -vf "subtitles=subs.srt" -c:v libx264 -c:a aac -shortest out.mp4
+  ```
+
+  渲完同样过 Step 4 验证（含 ffprobe）。
+- **(c) 两条路都没有**：交付"渲染工程包"——场景 HTML + 场景清单 + 用户本地渲染的确切命令，并按 Step 4 的交付诚实规则明说没有渲出 MP4。
 - 场景 HTML 放在用户项目或输出目录里，不要写进 skill 目录。
 
 ## 约束
 
+- **品牌 logo 只能合成 `assets/brand/` 里的资产文件**，任何环境、任何渲染路径下都不得手绘/重绘/用形状拼凑
 - 输出 MP4 无音轨；需要配音/配乐时提示用户可以用 ffmpeg 合流（`-i video.mp4 -i audio.m4a -c:v copy -shortest`）
 - 不做长视频剪辑、不处理真人素材；取网络视频文字稿用 mandarinai-video-fetch
 - auto 探测的单场景上限 30 秒（`-d` 显式指定最长 120 秒），更长的内容拆场景
