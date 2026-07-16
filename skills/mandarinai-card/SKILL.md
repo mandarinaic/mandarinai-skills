@@ -1,7 +1,7 @@
 ---
 name: mandarinai-card
-description: "Content caster (铸). Transforms content into PNG visuals. Seven molds: -l (default) long reading card, -i infograph, -m multi-card reading cards (1080x1440, default for long content), -v editorial sketchnote (problem→failure→pivot→insight→naming, magazine + archive layout), -c comic (manga-style B&W), -w whiteboard (marker-style board layout), -b big-fonts attachment card (1080x1440, weathered 碑刻 style for 小红书). Output to ~/Downloads/. Use when user says '铸', 'cast', '做成图', '做成卡片', '做成信息图', '做成海报', '视觉笔记', 'sketchnote', '杂志', 'editorial', '漫画', 'comic', 'manga', '白板', 'whiteboard', '大字', '附件图', 'big fonts', '小红书卡片'."
-version: "2.3.0"
+description: "Content caster (铸). Transforms content into PNG visuals. Eight molds: -l (default) long reading card, -i infograph, -m multi-card reading cards (1080x1440, default for long content), -v editorial sketchnote (problem→failure→pivot→insight→naming, magazine + archive layout), -c comic (manga-style B&W), -w whiteboard (marker-style board layout), -b big-fonts attachment card (1080x1440, weathered 碑刻 style for 小红书), -p poem/pinyin learning card (1080x1440, lowercase pinyin above each character + per-line translation, English default). Output to ~/Downloads/. Use when user says '铸', 'cast', '做成图', '做成卡片', '做成信息图', '做成海报', '视觉笔记', 'sketchnote', '杂志', 'editorial', '漫画', 'comic', 'manga', '白板', 'whiteboard', '大字', '附件图', 'big fonts', '小红书卡片', '诗词卡', '古诗', '拼音卡', '注音', 'poem card', 'pinyin card'."
+version: "2.4.0"
 ---
 
 # mandarinai-card: 铸
@@ -29,6 +29,7 @@ version: "2.3.0"
 | `-c` | 漫画 | 1080 x auto | 日式黑白漫画风格，动态选择漫画家视觉语言 |
 | `-w` | 白板 | 1080 x auto | 白板马克笔风格，结构化框图+箭头+彩色标记 |
 | `-b` | 大字 | 1080 x 1440 | 碑刻大字 + 和紙 + 外阴影，小红书附件风格（单句/短段） |
+| `-p` | 诗词注音 | 1080 x 1440 | 拼音（小写）悬于每个汉字上方 + 译文（默认英文）垫于每句下方，诗词/名句学习卡 |
 
 ## 长度路由（未指定模具时必做）
 
@@ -37,6 +38,7 @@ version: "2.3.0"
 - 内容 > 约 800 字（或预估渲染高度 > 3 屏 / ~4300px）→ 默认改走 `-m` 多卡，并告知用户
 - 用户明确要 `-l` → 尊重，但超长时提醒一句"这张会很长，要不要切成多卡？"
 - 反向同理：内容只有一两句却用了 `-m`，改推荐 `-l` 或 `-b`
+- 内容是**诗词/名句/对联/歌词**且用户提到拼音、注音、翻译或学习用途 → 默认走 `-p`；投给其他模具时也提一句"要不要 -p 注音卡？"
 
 ## 约束
 
@@ -127,3 +129,9 @@ Read `references/mode-whiteboard.md`，按其步骤执行。
 Read `references/mode-big.md`，按其步骤执行。
 
 模板：`assets/big_template.html`
+
+### -p：诗词注音
+
+Read `references/mode-poem.md`（含 `references/pinyin-annotation.md` 注音规范），按其步骤执行。
+
+模板：`assets/poem_template.html`

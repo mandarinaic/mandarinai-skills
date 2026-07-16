@@ -17,6 +17,7 @@
 - `-c` 漫画：DESIGN_VARIANCE=8, VISUAL_DENSITY=5（分镜叙事优先）。黑白网点，视觉语言随漫画家风格切换
 - `-w` 白板：DESIGN_VARIANCE=7, VISUAL_DENSITY=6（结构清晰优先）。框图/箭头/马克笔标记服务信息结构
 - `-b` 大字：DESIGN_VARIANCE=3, VISUAL_DENSITY=1（单句纪念碑）。一句话立起来，其余全部留白
+- `-p` 诗词注音：DESIGN_VARIANCE=2, VISUAL_DENSITY=2（三层对位优先）。**居中豁免**：诗是对称文体，标题/诗行/译文居中是正确性而非 AI 痕迹，「禁居中 Hero」对 -p 不适用
 
 ## 2. 排版工程
 

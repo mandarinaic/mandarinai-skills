@@ -57,21 +57,32 @@ async function main() {
   ])).catch(() => {});
   await page.waitForTimeout(500);
 
+  // page.screenshot() internally waits for document.fonts.ready, which can
+  // hang forever when a font CDN subset request stalls (frequent with rare
+  // CJK glyphs pulling extra Noto subsets). If it times out, fall back to a
+  // raw CDP capture of the current frame, which does not wait on fonts.
+  async function shoot(clip) {
+    const opts = { path: path.resolve(outputPath), type: 'png', clip, timeout: 20000 };
+    try {
+      await page.screenshot(opts);
+    } catch {
+      const cdp = await page.context().newCDPSession(page);
+      const { data } = await cdp.send('Page.captureScreenshot', {
+        format: 'png',
+        captureBeyondViewport: true,
+        clip: { ...clip, scale: 1 }
+      });
+      fs.writeFileSync(opts.path, Buffer.from(data, 'base64'));
+    }
+  }
+
   if (fullpage) {
     const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
     await page.setViewportSize({ width, height: bodyHeight });
     await page.waitForTimeout(300);
-    await page.screenshot({
-      path: path.resolve(outputPath),
-      type: 'png',
-      clip: { x: 0, y: 0, width, height: bodyHeight }
-    });
+    await shoot({ x: 0, y: 0, width, height: bodyHeight });
   } else {
-    await page.screenshot({
-      path: path.resolve(outputPath),
-      type: 'png',
-      clip: { x: 0, y: 0, width, height }
-    });
+    await shoot({ x: 0, y: 0, width, height });
   }
 
   await browser.close();
