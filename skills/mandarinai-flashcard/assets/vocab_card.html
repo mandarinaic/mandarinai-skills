@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<style>
+  :root { --brand: #1b46a2; --level: {{LEVEL_COLOR}}; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1080px; height: 1440px; background: #ffffff;
+         font-family: "PingFang SC", "Noto Sans SC", sans-serif; color: #1f2937;
+         display: flex; flex-direction: column; padding: 72px 80px 56px; }
+  .top { display: flex; justify-content: space-between; align-items: center; }
+  .chip { background: var(--level); color: #fff; font-size: 26px; font-weight: 600;
+          padding: 8px 28px; border-radius: 999px; letter-spacing: .06em; }
+  .pos { font-size: 26px; color: #6b7280; letter-spacing: .14em; text-transform: uppercase; }
+  .stage { flex: 1; display: flex; flex-direction: column; justify-content: center;
+           align-items: center; text-align: center; }
+  .word { font-size: 220px; font-weight: 700; line-height: 1.1; letter-spacing: .02em; }
+  .pinyin { font-size: 56px; color: var(--brand); margin-top: 18px; font-weight: 500; }
+  .en { font-size: 44px; margin-top: 30px; color: #374151; max-width: 860px; line-height: 1.35; }
+  .examples { margin-top: auto; display: flex; flex-direction: column; gap: 30px; }
+  .ex { border-left: 6px solid var(--level); padding: 6px 0 6px 28px; }
+  .ex-zh { font-size: 38px; line-height: 1.4; }
+  .ex-py { font-size: 26px; color: var(--brand); margin-top: 4px; }
+  .ex-en { font-size: 26px; color: #6b7280; margin-top: 4px; }
+  .footer { margin-top: 48px; padding-top: 28px; border-top: 1px solid #e5e7eb;
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 24px; color: #9ca3af; }
+  .footer .brand { color: var(--brand); font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <span class="chip">HSK {{LEVEL}}</span>
+    <span class="pos">{{POS}}</span>
+  </div>
+  <div class="stage">
+    <div class="word">{{WORD}}</div>
+    <div class="pinyin">{{PINYIN}}</div>
+    <div class="en">{{EN}}</div>
+  </div>
+  <div class="examples">{{EXAMPLES_HTML}}</div>
+  <div class="footer">
+    <span class="brand">MandarinAi</span>
+    <span>mandarinai.com</span>
+  </div>
+</body>
+</html>

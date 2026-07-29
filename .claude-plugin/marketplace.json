@@ -5,22 +5,25 @@
     "url": "https://www.mandarinai.com"
   },
   "metadata": {
-    "description": "MandarinAi agent skills - web PPT decks, social cards, content casting, paper/book reading, writing, WeChat 公众号",
-    "version": "0.1.0"
+    "description": "MandarinAi agent skills - web PPT decks, social cards, content casting, paper/book reading, writing, WeChat 公众号, Mandarin learner tools",
+    "version": "0.2.0"
   },
   "plugins": [
     {
       "name": "mandarinai-skills",
-      "description": "Web PPT decks, social cards, content casting, paper/book reading, writing engine, WeChat 公众号 writer + layout engine, video tools",
+      "description": "Web PPT decks, social cards, content casting, paper/book reading, writing engine, WeChat 公众号 writer + layout engine, video tools, and Mandarin learner tools (HSK flashcards, graded readers, story videos)",
       "source": "./",
       "strict": false,
       "skills": [
         "./skills/mandarinai-book",
         "./skills/mandarinai-card",
+        "./skills/mandarinai-flashcard",
         "./skills/mandarinai-illustration",
         "./skills/mandarinai-paper",
         "./skills/mandarinai-ppt",
+        "./skills/mandarinai-reader",
         "./skills/mandarinai-social-card",
+        "./skills/mandarinai-story-video",
         "./skills/mandarinai-video",
         "./skills/mandarinai-video-fetch",
         "./skills/mandarinai-wechat",

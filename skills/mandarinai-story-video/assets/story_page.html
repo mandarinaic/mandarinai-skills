@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>{{TITLE}}</title>
+<style>
+  /* OS-bundled fonts must be declared for the HyperFrames font check;
+     local() is enough — the renderer runs on this machine's font set. */
+  @font-face { font-family: "Songti SC"; src: local("Songti SC"); }
+  @font-face { font-family: "STSong"; src: local("STSong"); }
+  @font-face { font-family: "PingFang SC"; src: local("PingFang SC"); }
+  @font-face { font-family: "Avenir Next"; src: local("Avenir Next"); }
+  @font-face { font-family: "Noto Serif CJK SC"; src: local("Noto Serif CJK SC"); }
+  @font-face { font-family: "Noto Sans"; src: local("Noto Sans"); }
+  /* Sizes are tuned for 1080x1440 and scale with --u for other canvases. */
+  :root { --u: {{UNIT}}; --brand: #1b46a2; --ink: #172033; --muted: #6b7280;
+          --paper: #fffdf8; --rule: #dfe4ec; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: var(--paper); }
+  #root { position: relative; width: {{WIDTH}}px; height: {{HEIGHT}}px;
+          overflow: hidden; background: var(--paper); color: var(--ink);
+          font-family: "Songti SC", "STSong", "Noto Serif CJK SC", serif; }
+  .scene { position: absolute; inset: 0; opacity: 0; display: flex;
+           align-items: center; justify-content: center;
+           padding: calc(96px * var(--u)) calc(84px * var(--u)) calc(150px * var(--u)); }
+  .sentence { width: 100%; text-align: center; }
+  .hanzi { font-size: calc(64px * var(--u)); line-height: 2.05; letter-spacing: .1em;
+           font-weight: 600; }
+  ruby { ruby-position: over; margin-inline: .03em; }
+  rt { color: var(--brand); font-family: "PingFang SC", "Noto Sans", sans-serif;
+       font-size: .36em; font-weight: 600; letter-spacing: 0; text-transform: lowercase; }
+  .punctuation { letter-spacing: 0; }
+  .translation { margin-top: calc(44px * var(--u)); color: var(--muted);
+                 font: calc(31px * var(--u))/1.5 "Avenir Next", "PingFang SC", "Noto Sans", sans-serif; }
+  .center { text-align: center; max-width: calc(880px * var(--u)); }
+  .chip { display: inline-block; background: var(--brand); color: #fff;
+          font: 600 calc(28px * var(--u))/1.2 "PingFang SC", sans-serif;
+          padding: calc(10px * var(--u)) calc(30px * var(--u)); border-radius: 999px;
+          letter-spacing: .08em; }
+  .story-title { margin-top: calc(38px * var(--u)); font-size: calc(88px * var(--u));
+                 line-height: 1.2; letter-spacing: .06em; font-weight: 700; }
+  .story-sub { margin-top: calc(26px * var(--u)); color: var(--muted);
+               font: calc(30px * var(--u))/1.5 "PingFang SC", sans-serif; }
+  .end-cta { font-size: calc(52px * var(--u)); line-height: 1.5; letter-spacing: .06em; }
+  .end-brand { margin-top: calc(56px * var(--u)); color: var(--brand);
+               font: 700 calc(56px * var(--u))/1.2 "PingFang SC", sans-serif; }
+  .end-site { margin-top: calc(12px * var(--u)); color: var(--muted);
+              font: calc(32px * var(--u))/1.4 "Avenir Next", "PingFang SC", sans-serif; }
+  .watermark { position: absolute; z-index: 10; left: calc(84px * var(--u));
+               right: calc(84px * var(--u)); bottom: calc(44px * var(--u));
+               padding-top: calc(22px * var(--u)); border-top: 1px solid var(--rule);
+               display: flex; justify-content: space-between;
+               font: calc(23px * var(--u))/1.2 "PingFang SC", sans-serif; color: var(--muted); }
+  .watermark .brand { color: var(--brand); font-weight: 600; }
+</style>
+</head>
+<body>
+  <div id="root" data-composition-id="{{COMPOSITION_ID}}" data-start="0"
+       data-duration="{{DURATION}}" data-width="{{WIDTH}}" data-height="{{HEIGHT}}">
+{{SCENES_HTML}}
+    <div class="watermark" data-layout-allow-overlap>
+      <span class="brand">MandarinAi</span><span>mandarinai.com</span>
+    </div>
+{{AUDIO_HTML}}
+  </div>
+  <script src="assets/vendor/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const DATA = {{TIMELINE_DATA}};
+    const tl = gsap.timeline({ paused: true });
+    DATA.scenes.forEach((s) => {
+      const el = document.getElementById(s.id);
+      tl.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.35, ease: "power1.out" }, s.start);
+      const units = el.querySelectorAll(".hanzi ruby .b, .hanzi .punctuation");
+      if (units.length) {
+        // karaoke reveal: upcoming characters stay faintly visible, each
+        // turns solid on its (approximate) spoken beat
+        const revealSpan = Math.max(s.revealDur, 0.6);
+        tl.fromTo(units, { opacity: 0.13 },
+          { opacity: 1, duration: 0.3, stagger: revealSpan / units.length, ease: "power1.out" },
+          s.revealAt);
+      }
+      const trans = el.querySelector(".translation");
+      if (trans) {
+        tl.fromTo(trans, { opacity: 0, y: 14 },
+          { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, s.transAt);
+      }
+      const center = el.querySelector(".center");
+      if (center) {
+        tl.fromTo(center, { scale: 0.97 },
+          { scale: 1, duration: Math.max(s.dur - 0.4, 0.4), ease: "none" }, s.start + 0.1);
+      }
+      tl.to(el, { opacity: 0, duration: 0.3, ease: "power1.in" }, s.start + s.dur - 0.32);
+    });
+    if (DATA.bgm) {
+      tl.fromTo("#bgm", { volume: 0 }, { volume: DATA.bgm.volume, duration: 0.8, ease: "power1.out" }, 0);
+      tl.to("#bgm", { volume: 0, duration: 1.4, ease: "power1.in" }, Math.max(0, DATA.duration - 1.4));
+    }
+    window.__timelines[DATA.compositionId] = tl;
+  </script>
+</body>
+</html>

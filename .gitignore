@@ -11,3 +11,7 @@ local-tests/
 __pycache__/
 *.pyc
 *.pvt/
+
+# mandarinai-flashcard's genanki venv; mandarinai-story-video build dirs
+.venv/
+renders/

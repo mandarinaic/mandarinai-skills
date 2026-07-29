@@ -70,15 +70,25 @@
 
 写入：`/tmp/mandarinai_cast_poem_{name}.html`
 
-## 步骤 4：自检
+## 步骤 4：跑校验器，再自检
 
-先过 `pinyin-annotation.md` 的注音自检，再过本模具项：
+结构性错误交给脚本，别靠肉眼：
 
-- [ ] 字号档位与行排形态匹配，行宽估算 ≤ 860px？
-- [ ] 行末标点用 punct-hang、行中标点用 punct？
+```bash
+python3 scripts/validate-pinyin.py /tmp/mandarinai_cast_poem_{name}.html
+```
+
+**必须 exit 0 才能进步骤 5。** 它报 error 就是卡错了（漏注音、整句拼音塞一个
+`<rt>`、标点被卷进 `<ruby>`、拼音大写/数字调/v 代 ü、某行缺译文、行宽超
+860px），改 HTML 重跑。warning 是提醒（轻声未标调、译文过长、朱砂超过 1 处、
+行末标点没用 punct-hang、超过 4 行），逐条判断要不要改。
+
+脚本管不了的，自己过一遍：
+
+- [ ] 多音字按语境核对过（校验器只看格式，不知道"行"该读 xíng 还是 háng）？
+- [ ] 译文忠实、简洁、与该行一一对应，语言符合用户要求？
 - [ ] 标题/作者/诗行全部居中（-p 豁免"禁居中"规则）？
 - [ ] 字体：汉字 Noto Serif SC、拼音 Noto Sans SC、译文 EB Garamond 斜体？
-- [ ] 朱砂高亮 ≤ 1 处？
 
 ## 步骤 5：截图并核验
 

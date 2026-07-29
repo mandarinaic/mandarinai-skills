@@ -1,7 +1,9 @@
 # mandarinai-skills
 
-**MandarinAi** content-creation agent skills — the toolchain behind mandarinai.com's
-("Learn Chinese the Smart Way") articles, cards, decks, illustrations, and videos.
+**MandarinAi** agent skills — the toolchain behind mandarinai.com
+("Learn Chinese the Smart Way"): the content side (articles, cards, decks,
+illustrations, videos) and the learner side (HSK flashcards, graded readers,
+narrated story videos, backed by the site's live dictionary data).
 Usable from Claude Code, OpenAI Codex CLI, Gemini CLI, and Antigravity (`agy`).
 All of these tools support the same [Agent Skills](https://agentskills.io) standard:
 a skill is a directory containing a `SKILL.md` with `name` + `description` frontmatter,
@@ -13,6 +15,8 @@ accent yellow `#ffc107`, the 中文-badge logo, and the 19-character brand unive
 `skills/mandarinai-illustration/references/characters.md`).
 
 ## Skills
+
+### Content creation
 
 | Skill | What it does | Extra deps |
 |-------|--------------|------------|
@@ -28,17 +32,38 @@ accent yellow `#ffc107`, the 中文-badge logo, and the 19-character brand unive
 | `mandarinai-book` | 拆书 — deconstructs a book (问题/零点/位移/落点/行囊) + ASCII cognitive map; grounds on web or local EPUB/PDF | none (pdftotext for PDFs outside Claude Code) |
 | `mandarinai-video` | Animated MP4s from single-file HTML scenes (glitch / aurora / cinematic / data-chart / typewriter / outro) | Node + Playwright + ffmpeg |
 
+### Mandarin learner tools
+
+These are the ones that face students rather than readers. They chain:
+**`mandarinai-reader`** writes the graded article → **`mandarinai-story-video`** narrates
+it → **`mandarinai-flashcard`** turns its 生词表 into a deck. Poem/pinyin cards are
+**not** here — they're the `-p` mold of `mandarinai-card`.
+
+| Skill | What it does | Data source | Extra deps |
+|-------|--------------|-------------|------------|
+| `mandarinai-flashcard` | HSK / vocab flashcards: Anki `.apkg` (recognition + recall, optional TTS audio) and 1080x1440 PNG vocab cards, each linking back to the word's mandarinai.com page | live `mandarinai.com/api/flashcards/hsk` (11k+ words, HSK 1–7/9, multilingual); bundled export as offline fallback | python venv (genanki), Node + Playwright |
+| `mandarinai-reader` | Turns a video (Rednote/Bilibili/YouTube/Douyin), article, or topic into an HSK-graded reading article — controlled vocab + grammar, optional 生词表 / pinyin / grammar points | pure text generation; pairs with `mandarinai-video-fetch` for transcripts | none |
+| `mandarinai-story-video` | Turns a graded story into a vertical 1080x1440 learner video: per-sentence scenes with ruby pinyin, karaoke-style character reveal, translations, per-sentence TTS narration, MandarinAi title/end cards | TTS via the same endpoint as `mandarinai-flashcard` | Node (gsap + hyperframes), ffmpeg |
+
 ### One-time dependencies
 
-All four Node skills pin the same Playwright version, so the chromium download
-is shared — `npx playwright install chromium` only actually downloads once.
+All five Playwright skills pin the same version (1.59.1), so the chromium
+download is shared — it only actually downloads once. Run from the repo root:
 
 ```bash
-cd skills/mandarinai-card && npm install && npx playwright install chromium
-cd skills/mandarinai-social-card && npm install && npx playwright install chromium
-cd skills/mandarinai-video && npm install && npx playwright install chromium
-# mandarinai-wechat: only for optional Chrome-CDP publishing (writing needs nothing)
-cd skills/mandarinai-wechat && npm install && npx playwright install chromium
+# mandarinai-wechat is only needed for optional Chrome-CDP publishing (writing needs nothing)
+for s in card social-card video wechat flashcard; do
+  (cd "skills/mandarinai-$s" && npm install && npx playwright install chromium)
+done
+
+# mandarinai-story-video renders with hyperframes instead (downloads its own browser on first render)
+(cd skills/mandarinai-story-video && npm install)
+
+# mandarinai-flashcard also needs a venv for Anki packaging
+(cd skills/mandarinai-flashcard && python3 -m venv .venv && .venv/bin/pip install genanki)
+
+# ffmpeg: mandarinai-video and mandarinai-story-video
+brew install ffmpeg
 ```
 
 ## Brand

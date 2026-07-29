@@ -1,0 +1,10 @@
+# Optional Codex-only metadata. Skills work in Codex without this file;
+# it only adds UI polish in the Codex app. Safe to delete.
+interface:
+  display_name: "Mandarin Story Video"
+  short_description: "把分级中文故事做成带注音与朗读的竖屏学习短视频。"
+  brand_color: "#1b46a2"
+  default_prompt: "Use $mandarinai-story-video to 把这篇 HSK 2 小故事做成竖屏学习视频"
+
+policy:
+  allow_implicit_invocation: true

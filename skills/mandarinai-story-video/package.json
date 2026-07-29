@@ -1,0 +1,9 @@
+{
+  "name": "mandarinai-story-video-skill",
+  "private": true,
+  "description": "deps for mandarinai-story-video: gsap timeline + hyperframes HTML-to-MP4 renderer",
+  "dependencies": {
+    "gsap": "^3.12.0",
+    "hyperframes": "^0.7.0"
+  }
+}

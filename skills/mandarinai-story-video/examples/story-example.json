@@ -1,0 +1,24 @@
+{
+  "title": "早上的豆浆",
+  "subtitle": "一个 HSK 2 小故事",
+  "level": "HSK 2",
+  "lang": "en",
+  "composition_id": "soy-milk-morning",
+  "scenes": [
+    {
+      "hanzi": "每天早上，我去买豆浆。",
+      "pinyin": ["měi", "tiān", "zǎo", "shang", "wǒ", "qù", "mǎi", "dòu", "jiāng"],
+      "translation": "Every morning, I go to buy soy milk."
+    },
+    {
+      "hanzi": "老板认识我，总是多给我一点。",
+      "pinyin": ["lǎo", "bǎn", "rèn", "shi", "wǒ", "zǒng", "shì", "duō", "gěi", "wǒ", "yī", "diǎn"],
+      "translation": "The owner knows me and always gives me a little extra."
+    },
+    {
+      "hanzi": "一杯热豆浆，一天的好心情。",
+      "pinyin": ["yī", "bēi", "rè", "dòu", "jiāng", "yī", "tiān", "de", "hǎo", "xīn", "qíng"],
+      "translation": "A cup of hot soy milk, a good mood all day."
+    }
+  ]
+}

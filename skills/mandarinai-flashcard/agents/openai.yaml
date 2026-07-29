@@ -1,0 +1,10 @@
+# Optional Codex-only metadata. Skills work in Codex without this file;
+# it only adds UI polish in the Codex app. Safe to delete.
+interface:
+  display_name: "Mandarin Flashcard"
+  short_description: "HSK 生词做成 Anki 卡组或 1080x1440 单词卡，数据取自 mandarinai.com。"
+  brand_color: "#1b46a2"
+  default_prompt: "Use $mandarinai-flashcard to 把 HSK 3 的 20 个词做成带发音的 Anki 卡组"
+
+policy:
+  allow_implicit_invocation: true

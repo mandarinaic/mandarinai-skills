@@ -1,0 +1,30 @@
+{
+  "type": "vocab",
+  "id": 1,
+  "word": "爱",
+  "word_t": "愛",
+  "pinyin": "ài",
+  "zhuyin": "ㄞˋ",
+  "part_of_speech": "verb",
+  "hsk_level": 1,
+  "meaning": "love",
+  "image": "https://i.pinimg.com/736x/0c/c8/7b/0cc87ba2fc59357ee32aabf2e0323caa.jpg",
+  "audio": "https://api.wohuimandarin.com/nls/tts?text=%C3%A0i",
+  "examples": [
+    {
+      "chinese": "我爱妈妈和爸爸。",
+      "pinyin": "Wǒ ài māma hé bàba.",
+      "translation": "I love my mom and dad."
+    },
+    {
+      "chinese": "我爱我的小狗。",
+      "pinyin": "Wǒ ài wǒ de xiǎogǒu.",
+      "translation": "I love my puppy."
+    },
+    {
+      "chinese": "我爱你，我们结婚吧。",
+      "pinyin": "Wǒ ài nǐ, wǒmen jiéhūn ba.",
+      "translation": "I love you. Let’s get married."
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+# Optional Codex-only metadata. Skills work in Codex without this file;
+# it only adds UI polish in the Codex app. Safe to delete.
+interface:
+  display_name: "Mandarin Reader"
+  short_description: "把视频/文章/话题整理成供中文学习者阅读的分级文章。"
+  brand_color: "#1b46a2"
+  default_prompt: "Use $mandarinai-reader to 把这条视频整理成一篇 HSK 4 水平的中文学习文章"
+
+policy:
+  allow_implicit_invocation: true

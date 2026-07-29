@@ -1,0 +1,9 @@
+{
+  "name": "mandarinai-flashcard",
+  "version": "0.1.0",
+  "description": "mandarinai-flashcard skill dependencies (PNG card rendering)",
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "1.59.1"
+  }
+}
