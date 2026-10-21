@@ -2,7 +2,9 @@
 
 Run: python3 -m unittest discover -s skills/mandarinai-video/tests -v
 """
+import array
 import copy
+import math
 import importlib.util
 import json
 from pathlib import Path
@@ -149,7 +151,7 @@ class VoiceManifestTests(unittest.TestCase):
                 self.assertEqual("sidechaincompress" in filters, duck is not False)
                 self.assertIn("adelay=500:all=1", filters)
                 self.assertIn("adelay=1500:all=1", filters)
-                self.assertIn("apad,atrim=duration=4", filters)
+                self.assertIn("apad,asetpts=N/SR/TB,atrim=duration=4", filters)
                 self.assertNotIn("-shortest", command)
                 self.assertEqual(command.count(str(self.project / "assets/one.wav")), 1)
 
@@ -170,7 +172,7 @@ class ActualMixTests(unittest.TestCase):
         result = subprocess.run(["ffmpeg", "-n", "-v", "error", *args], capture_output=True, text=True, timeout=30)
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_two_speakers_with_looped_ducked_music_cover_the_closing_hold(self):
+    def mix_fixture(self, *, music=True):
         for name, hz in (("one", 880), ("two", 1320), ("music", 220)):
             audio = self.project / "assets" / f"{name}.wav"
             audio.unlink()
@@ -178,16 +180,47 @@ class ActualMixTests(unittest.TestCase):
         joined = self.root / "joined.mp4"
         completed = self.root / "completed.mp4"
         self.ffmpeg(["-f", "lavfi", "-i", "color=c=navy:s=32x32:r=10:d=4", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(joined)])
-        self.manifest["bgm"] = {"file": "assets/music.wav", "volume": 0.12}
+        if music:
+            self.manifest["bgm"] = {"file": "assets/music.wav", "volume": 0.12}
         manifest = copy.deepcopy(self.manifest)
         RENDER.validate(self.project, manifest)
         result = subprocess.run(RENDER.audio_mix_command(joined, completed, manifest, 4), capture_output=True, text=True, timeout=30)
         self.assertEqual(result.returncode, 0, result.stderr)
+        return completed
+
+    def levels(self, completed):
+        result = subprocess.run(["ffmpeg", "-v", "error", "-i", str(completed), "-ac", "1",
+                                 "-ar", "48000", "-f", "f32le", "pipe:1"], capture_output=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        samples = array.array("f", result.stdout)
+        def rms(start, end):
+            part = samples[round(start * 48000):round(end * 48000)]
+            return math.sqrt(sum(sample * sample for sample in part) / len(part))
+        return rms
+
+    def test_two_speakers_with_looped_ducked_music_cover_the_closing_hold(self):
+        completed = self.mix_fixture()
         evidence = RENDER.probe(completed)
         audio = next(stream for stream in evidence["streams"] if stream["codec_type"] == "audio")
         self.assertEqual(audio["codec_name"], "aac")
         self.assertAlmostEqual(float(audio["duration"]), 4, delta=0.02)
         self.assertAlmostEqual(float(evidence["format"]["duration"]), 4, delta=0.02)
+        rms = self.levels(completed)
+        # A full-length AAC stream can contain only quiet music. Require both
+        # utterances to be audible at their declared starts above the music bed.
+        music_level = rms(2.5, 2.8)
+        for start, end in ((0.6, 0.9), (1.6, 1.9)):
+            self.assertGreater(rms(start, end), max(0.03, music_level * 4))
+        self.assertGreater(music_level, 0.001)
+
+    def test_voice_only_mix_has_speech_at_both_offsets_and_silence_between(self):
+        completed = self.mix_fixture(music=False)
+        rms = self.levels(completed)
+        self.assertLess(rms(0.05, 0.35), 0.0001)
+        self.assertGreater(rms(0.6, 0.9), 0.03)
+        self.assertLess(rms(1.1, 1.4), 0.0001)
+        self.assertGreater(rms(1.6, 1.9), 0.03)
+        self.assertLess(rms(2.2, 3.5), 0.0001)
 
 
 if __name__ == "__main__":

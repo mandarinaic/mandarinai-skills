@@ -189,7 +189,10 @@ def audio_mix_command(joined, completed, manifest, duration):
         input_index += 1
     duck = bool(voices and manifest.get("bgm") and manifest["bgm"].get("duck", True))
     if voices:
-        filters.append("".join(voices) + f"amix=inputs={len(voices)}:duration=longest:normalize=0,apad,atrim=duration={duration},asetpts=N/SR/TB[voicebus]")
+        # Establish the sample clock BEFORE atrim. Normalized/delayed inputs can
+        # leave amix with undefined timestamps; trimming that clock can discard
+        # every audible sample while later padding still produces a full track.
+        filters.append("".join(voices) + f"amix=inputs={len(voices)}:duration=longest:normalize=0,apad,asetpts=N/SR/TB,atrim=duration={duration}[voicebus]")
         if duck:
             filters.append("[voicebus]asplit=2[narration][sidechain]")
             mixed.append("[narration]")
@@ -207,7 +210,7 @@ def audio_mix_command(joined, completed, manifest, duration):
             mixed.append("[music]")
     if not mixed:
         fail("cannot mix a project without audio")
-    filters.append("".join(mixed) + f"amix=inputs={len(mixed)}:duration=longest:normalize=0,alimiter=limit=0.95:level=0,apad,atrim=duration={duration},asetpts=N/SR/TB[audio]")
+    filters.append("".join(mixed) + f"amix=inputs={len(mixed)}:duration=longest:normalize=0,alimiter=limit=0.95:level=0,apad,asetpts=N/SR/TB,atrim=duration={duration}[audio]")
     command.extend(["-filter_complex", ";".join(filters), "-map", "0:v:0", "-map", "[audio]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-t", str(duration), "-movflags", "+faststart", str(completed)])
     return command
 
