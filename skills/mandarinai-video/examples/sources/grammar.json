@@ -1,0 +1,27 @@
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "_fixture": {"synthetic": true, "note": "Synthetic grammar export for offline workflow examples; demo-grammar is not a published content ID."},
+    "id": "demo-grammar",
+    "title": "用“比”比较",
+    "english_title": "Comparisons with 比",
+    "hsk_level": 2,
+    "abstract": "用 A 比 B + 形容词说明两者的差别。",
+    "images": [],
+    "content_groups": [
+      {
+        "id": 900101,
+        "parent_id": 0,
+        "group_type": "explanation",
+        "title": "基本句型",
+        "en_title": "Basic pattern",
+        "order": 1,
+        "metadata": "{\"pattern\":\"A 比 B + adjective\"}",
+        "sentences": [
+          {"id": 900111, "group_id": 900101, "chinese": "今天比昨天热。", "pinyin": "Jīntiān bǐ zuótiān rè.", "order": 1, "context_type": "example", "translations": [{"id": 900121, "sentence_id": 900111, "language": "en", "translation": "Today is hotter than yesterday.", "order": 1, "context_note": "Compare today's weather with yesterday's."}]}
+        ]
+      }
+    ]
+  }
+}

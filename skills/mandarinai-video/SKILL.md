@@ -1,86 +1,102 @@
 ---
 name: mandarinai-video
-description: "Create short animated videos (MP4) from single-file HTML scenes, rendered locally with Playwright + ffmpeg. Six built-in frame styles: glitch title (cyberpunk), liquid aurora hero, light-leak cinematic, NYT-style animated data chart, typewriter terminal text, logo outro. Use when the user asks to 做视频 / 做个片头 / 生成 MP4 / video intro / title card / animated chart video / 转场 / outro, or wants article/deck content turned into a short video. Not for: long-form editing, talking-head video, or fetching existing videos (use mandarinai-video-fetch for that)."
-version: "0.1.0"
+description: "Generate MandarinAi promo or tutorial MP4s for HSK words, grammar, universities, and processed articles from Goose data and Swan pages. Use for 宣传片、教程视频、语法讲解、词汇教学、大学介绍、文章解读, product walkthroughs, launch clips, or animated HTML scenes. Includes editable previews, narration, subtitles, and local rendering. Sentence-by-sentence graded-story read-alongs use mandarinai-story-video; fetching existing videos uses mandarinai-video-fetch."
+metadata:
+  version: "0.2.0"
 ---
 
-# mandarinai-video
+# MandarinAi video
 
-<!-- attribution: render pipeline and bundled templates ported from nexu-io/html-video (Apache-2.0); some upstream templates derive from heygen-com/hyperframes (Apache-2.0). Keep notices in scripts/ and assets/templates/. -->
+Turn project content into a watchable promo or teaching video, with source records, an editable project, captions, and a verified MP4. Keep the MandarinAi name, real bundled logo, blue `#1b46a2`, and yellow `#ffc107`.
 
-写若干个单文件 HTML 动画场景，本机渲染成一个 MP4。HTML 即视频：能用 CSS/JS 表达的画面都能变成片子。
+The motion direction draws on [huashu-motion](https://github.com/alchaincyf/huashu-motion) and [huashu-art-motion](https://github.com/alchaincyf/huashu-art-motion). This skill runs its own HTML/Playwright/FFmpeg pipeline; it does not require either upstream runtime. Existing Apache-2.0 render/template attribution remains in place.
 
-## 工作流
+## Choose the route
 
-### Step 1 · 需求澄清
+- **Project promo/tutorial**: use the content workflow below. Default promo: 20–35 seconds, one benefit and one CTA. Default tutorial: 40–75 seconds, one learning objective, worked example, and recall beat. Use 9:16 for short-form social; 16:9 for a desktop walkthrough; 1:1 when requested. Defaults are starting points; let narration and reading time determine the actual length.
+- **A word page's existing export**: Swan supports strokes, examples, relations, quizzes, presenters, and narration. Use the real page/export control when that is the requested result. See [project-content.md](references/project-content.md); browser output format depends on encoder support.
+- **Sentence-by-sentence graded story**: use `mandarinai-story-video`. For a processed article, obtain the source first with this skill's helper, then select its sentences for the story input.
+- **Standalone title, chart, or HTML scene**: retain the standalone scene workflow below.
 
-问清（或基于内容合理默认并说明）：
+Use available IDs, links, exports, and preferences. When an ID is missing, search the real project list endpoint or use the supplied local export. Choose routine production defaults and proceed; never invent a published record to fill a gap.
 
-1. **内容来源**：主题 / 文章 / 文字稿（视频链接先走 mandarinai-video-fetch 取文字稿）
-2. **时长与场景数**：默认 3-5 个场景、总长 15-30 秒；单场景片头 5 秒左右
-3. **风格**：从模板目录挑（见 Step 2），或按内容推荐
-4. **比例**：默认 1920x1080（16:9）；竖屏 1080x1920 需在场景 HTML 里同步改版式
+## 1. Obtain the actual content
 
-### Step 2 · 挑场景模板
-
-读 `references/templates.md` 选型。六个内置模板（`assets/templates/`）：
-
-| 模板 | 风格 | 适合 |
-|------|------|------|
-| `glitch-title.html` | 故障艺术 / cyberpunk | 片头、转场、"system online" |
-| `liquid-hero.html` | 极光流体渐变 | 产品亮相、大声明 |
-| `light-leak-cinema.html` | 暖调胶片漏光 | 情绪片段、品牌片、年度回顾 |
-| `data-chart-nyt.html` | 报纸风动画折线图 | "数字涨了"的故事 |
-| `text-cursor.html` | 终端打字机 | 代码 / CLI 演示、逐字揭示 |
-| `logo-outro.html` | 干净 logo 收尾 | 任何片子的结尾页 |
-
-每个场景：**拷贝模板 → 替换为真实内容 → 保持视觉签名**。不要 lorem ipsum，不要占位图。写新场景或大改动画前必读 `references/authoring.md`（时长探测规则、字体、循环动画的写法都在里面）。
-
-用 `logo-outro.html` 时必须把品牌资产拷到场景同目录（模板按相对路径引用）：
+Read [project-content.md](references/project-content.md) for the relevant Goose endpoint, Swan route, locale, and data shape. `SKILL_ROOT` means the directory containing this file; run commands from there. Store generated work in a task output directory such as `./output/videos/<slug>/`, outside the skill installation.
 
 ```bash
-cp <SKILL_ROOT>/assets/brand/mandarinai-icon.png <场景目录>/   # 宽字标版本：mandarinai-logo.png
+python3 scripts/prepare-content.py --kind word --id REAL_WORD_ID \
+  --language en --out /absolute/task/source.json
 ```
 
-### Step 3 · 渲染
+Kinds are `word`, `grammar`, `university`, `article`. Use `--input saved-response.json` for an existing authorized export. `--api-base` / `MANDARIN_API_BASE` selects Goose's public origin; `--site-base` / `MANDARIN_SITE_BASE` selects Swan's origin. Defaults use `https://www.mandarinai.com`. The helper saves provenance and the original record alongside readable fields. It refuses to replace an existing snapshot.
+
+Inspect `content` and `raw` before scripting. Keep structured example order, translations, article punctuation and content blocks, university locations, and the difference between missing facts and negative facts. Examples under `examples/sources/` are synthetic fixtures; their links lead to library pages and must never be represented as published records.
+
+For a UI walkthrough, capture the real resolved Swan page after its content, fonts, and images load. Save screenshots locally and record their URLs in the script. Only claim interactions the current UI supports. Explanatory motion graphics should be visibly distinct from UI captures.
+
+## 2. Write the production brief
+
+Read [production.md](references/production.md) for the schema and commands, and [motion-direction.md](references/motion-direction.md) for pacing, explanation techniques, and review. Choose one visual direction; offer alternatives when requested. A reviewable storyboard and preview are deliverables, not a mandatory approval stop.
+
+Write `brief.json` with `mode`, `format`, `style`, and `scenes`. Use one claim or learning step per scene. The four sample briefs show useful narrative shapes:
+
+| Source | Tutorial | Promo |
+| --- | --- | --- |
+| HSK word | Meaning → pronunciation/example → retrieval → word-page CTA | Recognizable need → real word features → CTA |
+| Grammar | Meaning → formula → worked example → recall | Learning difficulty → useful construction → examples → CTA |
+| University | Place → verified facts → how to explore programs | Institution → verified highlights → details CTA |
+| Processed article | Context → ordered excerpt → vocabulary/grammar → comprehension | Hook → excerpt → reader controls → article CTA |
+
+Use the record's pinyin, meaning, translation, and HSK level where available; check polyphonic readings before narration. Per-Hanzi ruby needs one tone-marked syllable per Hanzi; use natural word-level pinyin separately when ruby is inappropriate. HSK internal level `7` is displayed as `7–9`. Do not assert a whole example is at a level merely because its target word is.
+
+Prefer existing suitable audio, a local recording, or Swan's `/tts` for intelligible Mandarin narration. Do not substitute an unverified voice model for pronunciation teaching. Scene timing comes from measured audio plus a reading/retrieval hold. Character highlights without alignment are approximate; generated SRT has phrase-level timing.
+
+## 3. Build and preview
 
 ```bash
-cd <SKILL_ROOT>
-node scripts/render.mjs -o ~/Downloads/out.mp4 scene1.html scene2.html scene3.html
+python3 scripts/build-project.py /absolute/task/brief.json \
+  --source /absolute/task/source.json --out /absolute/task/project --tts
 ```
 
-- 多个场景自动按顺序拼接；`-d 5` 强制每场景精确 5 秒（不足时定格补齐），默认 `auto` 按动画实际长度
-- `-s 1080x1920` 竖屏；`-f 60` 高帧率
-- 采集模式 `-c`：默认 `frames`（虚拟时钟逐帧截图——时长和帧数精确、不受机器负载影响，约 1 分钟/场景）；`-c screencast` 走实时录屏（快，适合草稿预览；场景里有 `<video>`/`<audio>` 实媒体时**必须**用它——虚拟时钟不驱动媒体播放）
-- 依赖：本目录 `npm install && npx playwright install chromium`，以及 `ffmpeg`（`brew install ffmpeg`）
-- 模板用了 Tailwind CDN 和 Google Fonts，渲染机器需要网络；字体加载有 8 秒上限兜底
+`--tts` uses Swan `/tts?text=...&voice=...`, keeping upstream credentials on Swan. Use `--tts-url` for a local Swan origin. Each line must fit its 200 UTF-16-unit limit. Local per-scene `audio` also works. If narration is unavailable, fix it or explicitly build a silent draft with `--silent`; the manifest records this choice. Do not quietly drop failed audio.
 
-### Step 4 · 验证
+The builder creates self-contained scene HTML, a seekable `preview.html`, `project.json`, `source.json`, `script.md`, `captions.srt`, and local assets. Inspect the first content scene, the densest scene, and the CTA in the preview. Rebuild into a new directory after brief changes. Starters support `clean`, `editorial`, and `ink` palettes plus hero, lesson, facts, comparison, screenshot, and CTA layouts. For bespoke motion, edit the generated scene and preserve `window.renderAt(seconds)`.
 
-1. `ffprobe -v error -show_entries format=duration,size -of default=nw=1 out.mp4` 确认时长量级正确
-2. 在浏览器里打开每个场景 HTML 过一遍：文字没溢出、动画在预期时长内走完
-3. 总时长明显不对（如 5 秒默认值），通常是动画全写成了 `infinite`——读 `references/authoring.md` 的探测规则
-4. **交付诚实**：交付说明/README 里的时长、分辨率、编码只能来自对真实文件的 `ffprobe` 读数。没有渲出 MP4 时，交付第一句必须说明"未渲染成 MP4"，并给出用户本地渲染的确切命令——**绝不描述不存在的产物**
+Optional music must be a local file the user can use. Keep it below narration, with fades. Captions are a sidecar, not burned into the video; learning text remains visible in the scenes.
 
-## 运行环境适配
+## 4. Render, review, deliver
 
-按当前环境的实际能力选渲染路径，降级必须声明，不许悄悄跳过：
+```bash
+python3 scripts/render-project.py /absolute/task/project \
+  --output /absolute/task/tutorial-v1.mp4
+```
 
-- **(a) Node + Playwright + ffmpeg**（Claude Code / Codex CLI / Gemini CLI 本机）：走上面的主工作流 `render.mjs`。
-- **(b) 无浏览器但有 ffmpeg**（ChatGPT / Codex 云沙箱）：`render.mjs` 跑不了，但仍要交出真实 MP4——用环境的原生图像生成能力（沿用 mandarinai-illustration 的能力阶梯）按分镜生成场景静帧，**不要用 PIL/matplotlib 手绘场景**，再用 ffmpeg 拼片：每帧 `zoompan` 缓推成小段，`concat` 拼接，`subtitles` 烧字幕，音轨合流：
+The renderer captures scenes at exact frame times, concatenates them, mixes narration/music through the full CTA, and verifies the file with `ffprobe`. Optional `--browser /path/to/chrome` uses an installed executable. Existing outputs are preserved; use a new versioned filename.
 
-  ```bash
-  ffmpeg -loop 1 -t 6 -i s01.png -vf "zoompan=z='1+0.04*on/(30*6)':d=30*6:s=1920x1080,fps=30" -pix_fmt yuv420p s01.mp4
-  ffmpeg -f concat -safe 0 -i list.txt -i ambient.wav -vf "subtitles=subs.srt" -c:v libx264 -c:a aac -shortest out.mp4
-  ```
+Inspect adjacent `*.verification.json` and representative frames under `*-qa/`. Review the full cut for meaning, pronunciation, reading time, transitions, and audio balance. Machine checks cannot certify instructional accuracy or every layout. Use [motion-direction.md](references/motion-direction.md)'s criteria and record unresolved issues. If a shot clips text, simplify or split it and render again.
 
-  渲完同样过 Step 4 验证（含 ffprobe）。
-- **(c) 两条路都没有**：交付"渲染工程包"——场景 HTML + 场景清单 + 用户本地渲染的确切命令，并按 Step 4 的交付诚实规则明说没有渲出 MP4。
-- 场景 HTML 放在用户项目或输出目录里，不要写进 skill 目录。
+Deliver the MP4, captions, project/preview, source provenance, and actual duration/resolution/audio status. State whether captions are sidecar-only and whether audio is synthesized, local, or absent. If rendering fails, explicitly say **MP4 was not rendered**, include the editable project and exact rerun command, and report the concrete missing dependency.
 
-## 约束
+## Standalone HTML scenes
 
-- **品牌 logo 只能合成 `assets/brand/` 里的资产文件**，任何环境、任何渲染路径下都不得手绘/重绘/用形状拼凑
-- 输出 MP4 无音轨；需要配音/配乐时提示用户可以用 ffmpeg 合流（`-i video.mp4 -i audio.m4a -c:v copy -shortest`）
-- 不做长视频剪辑、不处理真人素材；取网络视频文字稿用 mandarinai-video-fetch
-- auto 探测的单场景上限 30 秒（`-d` 显式指定最长 120 秒），更长的内容拆场景
+The original six templates remain available: [templates.md](references/templates.md). Read [authoring.md](references/authoring.md) before writing a scene. Copy a template to the task output folder and replace its content; the logo must use the actual `assets/brand/` PNG.
+
+```bash
+node scripts/render.mjs -o /absolute/task/title-v1.mp4 scene1.html scene2.html
+```
+
+`-d` sets a shared explicit duration; `-s 1080x1920` sets portrait output; `-f 30` sets fps. This low-level command outputs silent video. Use the project workflow for mixed narration/music. Legacy CSS/GSAP uses virtual time in default `frames` mode; real `<video>` needs `-c screencast`. Seekable scenes instead expose `window.renderAt(t)` and `data-duration` (see authoring reference).
+
+## Dependencies and boundaries
+
+Node, Python 3, Playwright, FFmpeg/ffprobe:
+
+```bash
+npm install
+npx playwright install chromium
+```
+
+FFmpeg must be on PATH. New project scenes use local assets and system CJK fonts, with no CDN dependency; older templates may fetch Google Fonts/Tailwind. Check the environment and use existing Chrome via `--browser` when appropriate. When rendering is unavailable, deliver the project honestly; do not promise an MP4 from an untested fallback.
+
+Generation reads Goose and renders locally. Publishing, uploading, changing article visibility, or changing Goose/Swan code is outside this workflow unless requested. Assets, screenshots, and narration belong in the task project; keep API keys out of briefs, HTML, and delivery files.

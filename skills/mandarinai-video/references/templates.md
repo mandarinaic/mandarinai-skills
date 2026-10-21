@@ -38,7 +38,7 @@
 
 - **签名**：几何拼块入场组成 logo + 品牌字 shimmer 扫光 + tagline 淡入，深色底；默认 MandarinAi 品牌（蓝 #1b46a2 / 黄 #ffc107）
 - **适合**：任何片子的最后一个场景
-- **改造点**：logo（SVG 拼块或 data URI 图片）、品牌名、tagline、底色与品牌色
+- **改造点**：真实品牌 PNG（本地路径或 data URI）、品牌名、tagline、底色与品牌色；不要重绘或用 SVG 拼块冒充品牌标志
 
 ## 没有合适模板时
 

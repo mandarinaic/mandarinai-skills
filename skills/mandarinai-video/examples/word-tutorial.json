@@ -1,0 +1,76 @@
+{
+  "source": "source.json",
+  "mode": "tutorial",
+  "format": "portrait",
+  "style": "clean",
+  "fps": 30,
+  "title": "学习 · 词汇教程示例",
+  "scenes": [
+    {
+      "layout": "hero",
+      "label": "OFFLINE DEMO · HSK 1",
+      "heading": "今天学一个词",
+      "text": "学习",
+      "pinyin": [
+        "xué",
+        "xí"
+      ],
+      "translation": "to study; to learn",
+      "narration": "今天，我们一起学一个词，学习。",
+      "duration": 5
+    },
+    {
+      "layout": "lesson",
+      "label": "WORD IN CONTEXT",
+      "heading": "放进句子里",
+      "text": "我学习汉语。",
+      "pinyin": [
+        "wǒ",
+        "xué",
+        "xí",
+        "hàn",
+        "yǔ"
+      ],
+      "translation": "I study Chinese.",
+      "narration": "我学习汉语。请跟我读一遍。",
+      "duration": 7,
+      "hold": 3
+    },
+    {
+      "layout": "comparison",
+      "heading": "哪个意思正确？",
+      "text": "学习",
+      "pinyin": [
+        "xué",
+        "xí"
+      ],
+      "bullets": [
+        "A · to study; to learn",
+        "B · to sleep"
+      ],
+      "narration": "学习，是哪个意思？想一想。",
+      "duration": 6,
+      "hold": 3
+    },
+    {
+      "layout": "lesson",
+      "heading": "答案是 A",
+      "text": "学习",
+      "pinyin": [
+        "xué",
+        "xí"
+      ],
+      "translation": "to study; to learn",
+      "narration": "对，学习，就是 to study，to learn。",
+      "duration": 5
+    },
+    {
+      "layout": "cta",
+      "label": "MANDARINAI · DEMO",
+      "heading": "继续练习中文",
+      "text": "Explore the HSK word library.",
+      "narration": "到 MandarinAi，继续练习中文。",
+      "duration": 5
+    }
+  ]
+}

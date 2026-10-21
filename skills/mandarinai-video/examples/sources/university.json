@@ -1,0 +1,23 @@
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "_fixture": {"synthetic": true, "note": "Entirely fictional university for offline workflow examples; names, media placeholders and ID are not live university evidence."},
+    "id": "demo-university",
+    "name": "示例中文大学",
+    "en_name": "Example Chinese University",
+    "country_id": 900201,
+    "country": {"id": 900201, "name": "示例国家", "en_name": "Example Country"},
+    "province_id": 900202,
+    "province": {"id": 900202, "name": "示例省", "en_name": "Example Province"},
+    "city_id": 900203,
+    "city": {"id": 900203, "name": "示例市", "en_name": "Example City"},
+    "intro": "这是一所供视频模板演示使用的虚构大学。这里的学习生活和项目资料均为示例。",
+    "images": ["https://example.invalid/campus-wide.jpg"],
+    "videos": [],
+    "degree_levels": ["bachelor"],
+    "campuses": [
+      {"id": "demo-campus", "university_id": "demo-university", "name": "示例校区", "en_name": "Example Campus", "is_main_campus": true, "images": ["https://example.invalid/campus-wide.jpg", "https://example.invalid/library.jpg"]}
+    ]
+  }
+}

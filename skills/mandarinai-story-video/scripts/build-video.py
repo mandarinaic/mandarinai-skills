@@ -41,7 +41,7 @@ import urllib.request
 from pathlib import Path
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-TTS_DEFAULT = "https://api.wohuimandarin.com/nls/tts?text="
+TTS_DEFAULT = "https://www.mandarinai.com/tts?text="
 UA = "Mozilla/5.0 (mandarinai-story-video skill)"
 MAX_SCENES = 20
 LEAD = 0.9            # silence before narration while the sentence fades in

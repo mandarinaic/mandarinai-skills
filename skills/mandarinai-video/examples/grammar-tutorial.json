@@ -1,0 +1,83 @@
+{
+  "source": "source.json",
+  "mode": "tutorial",
+  "format": "portrait",
+  "style": "editorial",
+  "fps": 30,
+  "title": "用“比”比较 · 语法教程示例",
+  "scenes": [
+    {
+      "layout": "hero",
+      "label": "OFFLINE DEMO · HSK 2",
+      "heading": "怎么说“更热”？",
+      "text": "用“比”比较",
+      "narration": "今天，我们用比来比较。",
+      "duration": 5
+    },
+    {
+      "layout": "facts",
+      "heading": "先看句型",
+      "text": "A 比 B + 形容词",
+      "bullets": [
+        "A · 要描述的人或事物",
+        "B · 比较的对象"
+      ],
+      "narration": "A 比 B，加形容词。",
+      "duration": 7,
+      "hold": 2
+    },
+    {
+      "layout": "lesson",
+      "heading": "一起读例句",
+      "text": "今天比昨天热。",
+      "pinyin": [
+        "jīn",
+        "tiān",
+        "bǐ",
+        "zuó",
+        "tiān",
+        "rè"
+      ],
+      "translation": "Today is hotter than yesterday.",
+      "narration": "今天比昨天热。",
+      "duration": 7,
+      "hold": 3
+    },
+    {
+      "layout": "comparison",
+      "heading": "找出比较对象",
+      "bullets": [
+        "A · 今天",
+        "B · 昨天"
+      ],
+      "text": "今天比昨天热。",
+      "narration": "今天和昨天，谁更热？",
+      "duration": 6,
+      "hold": 3
+    },
+    {
+      "layout": "lesson",
+      "heading": "今天更热",
+      "text": "今天比昨天热。",
+      "pinyin": [
+        "jīn",
+        "tiān",
+        "bǐ",
+        "zuó",
+        "tiān",
+        "rè"
+      ],
+      "translation": "Today is hotter than yesterday.",
+      "narration": "今天更热。再读一遍，今天比昨天热。",
+      "duration": 6
+    },
+    {
+      "layout": "cta",
+      "label": "MANDARINAI · DEMO",
+      "heading": "看更多真实例句",
+      "text": "Explore the grammar library.",
+      "narration": "到 MandarinAi，学习更多语法。",
+      "duration": 5
+    }
+  ]
+}

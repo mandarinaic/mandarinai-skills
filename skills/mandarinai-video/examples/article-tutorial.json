@@ -1,0 +1,83 @@
+{
+  "source": "source.json",
+  "mode": "tutorial",
+  "format": "portrait",
+  "style": "clean",
+  "fps": 30,
+  "title": "每天学习一点中文 · 文章教程示例",
+  "scenes": [
+    {
+      "layout": "hero",
+      "label": "OFFLINE ARTICLE DEMO",
+      "heading": "每天一点中文",
+      "text": "每天学习一点中文",
+      "narration": "今天，我们读两句中文。",
+      "duration": 5
+    },
+    {
+      "layout": "lesson",
+      "heading": "第一句",
+      "text": "我每天学习中文。",
+      "pinyin": [
+        "wǒ",
+        "měi",
+        "tiān",
+        "xué",
+        "xí",
+        "zhōng",
+        "wén"
+      ],
+      "translation": "I study Chinese every day.",
+      "narration": "我每天学习中文。",
+      "duration": 7,
+      "hold": 3
+    },
+    {
+      "layout": "lesson",
+      "heading": "第二句",
+      "text": "今天，我学习一个新词。",
+      "pinyin": [
+        "jīn",
+        "tiān",
+        "wǒ",
+        "xué",
+        "xí",
+        "yí",
+        "ge",
+        "xīn",
+        "cí"
+      ],
+      "translation": "Today, I learn a new word.",
+      "narration": "今天，我学习一个新词。",
+      "duration": 8,
+      "hold": 3
+    },
+    {
+      "layout": "facts",
+      "heading": "每天 + 动词",
+      "text": "我每天学习中文。",
+      "bullets": [
+        "每天 · every day",
+        "学习 · to study; to learn"
+      ],
+      "narration": "每天，加上动作，可以说每天做什么。",
+      "duration": 7
+    },
+    {
+      "layout": "lesson",
+      "heading": "你每天做什么？",
+      "text": "我每天……",
+      "narration": "你每天做什么？试着说一句。",
+      "duration": 6,
+      "hold": 4
+    },
+    {
+      "layout": "cta",
+      "label": "MANDARINAI · DEMO",
+      "heading": "继续读，继续练",
+      "text": "Explore the processed article library.",
+      "narration": "到 MandarinAi，继续读中文。",
+      "duration": 5
+    }
+  ]
+}

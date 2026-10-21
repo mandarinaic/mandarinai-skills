@@ -1,13 +1,13 @@
 {
   "name": "mandarinai-skills",
-  "version": "0.2.0",
-  "description": "MandarinAi agent skills - web PPT decks, social cards, content casting, paper reading, writing, and Mandarin learner tools (HSK flashcards, graded readers, story videos)",
+  "version": "0.3.0",
+  "description": "MandarinAi agent skills - content creation, narrated promo/tutorial videos from Goose and Swan, HSK flashcards, graded readers, and story videos",
   "author": {
     "name": "MandarinAi",
     "url": "https://www.mandarinai.com"
   },
   "repository": "https://github.com/mandarinaic/mandarinai-skills",
   "keywords": ["skills", "ppt", "social-cards", "visualization", "paper-reading", "writing",
-               "mandarin", "hsk", "flashcards", "graded-reader", "chinese-learning"],
+               "mandarin", "hsk", "flashcards", "graded-reader", "chinese-learning", "promo-video", "tutorial-video"],
   "skills": "./skills"
 }

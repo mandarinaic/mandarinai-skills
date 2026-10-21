@@ -30,7 +30,7 @@ accent yellow `#ffc107`, the 中文-badge logo, and the 19-character brand unive
 | `mandarinai-wechat-layout` | WeChat 公众号 layout engine — Markdown/docx/PDF → themed inline-styled HTML that pastes into the 公众号 editor without losing styles; 6 theme component libraries + theme generator, auto chapter numbering, keyword underlines, dual lint/validate scripts, copy-button preview page | python3 (validators) |
 | `mandarinai-video-fetch` | Video link → clean transcript (YouTube / bilibili / xiaohongshu / douyin); feeds mandarinai-writes / card / ppt | yt-dlp + ffmpeg; whisper for no-sub videos |
 | `mandarinai-book` | 拆书 — deconstructs a book (问题/零点/位移/落点/行囊) + ASCII cognitive map; grounds on web or local EPUB/PDF | none (pdftotext for PDFs outside Claude Code) |
-| `mandarinai-video` | Animated MP4s from single-file HTML scenes (glitch / aurora / cinematic / data-chart / typewriter / outro) | Node + Playwright + ffmpeg |
+| `mandarinai-video` | Promo/tutorial MP4s for Goose HSK words, grammar, universities, and processed articles; real Swan links, editable preview, measured narration, SRT, verified audio/video; standalone templates retained | Python 3 + Node + Playwright + ffmpeg |
 
 ### Mandarin learner tools
 
@@ -43,7 +43,43 @@ it → **`mandarinai-flashcard`** turns its 生词表 into a deck. Poem/pinyin c
 |-------|--------------|-------------|------------|
 | `mandarinai-flashcard` | HSK / vocab flashcards: Anki `.apkg` (recognition + recall, optional TTS audio) and 1080x1440 PNG vocab cards, each linking back to the word's mandarinai.com page | live `mandarinai.com/api/flashcards/hsk` (11k+ words, HSK 1–7/9, multilingual); bundled export as offline fallback | python venv (genanki), Node + Playwright |
 | `mandarinai-reader` | Turns a video (Rednote/Bilibili/YouTube/Douyin), article, or topic into an HSK-graded reading article — controlled vocab + grammar, optional 生词表 / pinyin / grammar points | pure text generation; pairs with `mandarinai-video-fetch` for transcripts | none |
-| `mandarinai-story-video` | Turns a graded story into a vertical 1080x1440 learner video: per-sentence scenes with ruby pinyin, karaoke-style character reveal, translations, per-sentence TTS narration, MandarinAi title/end cards | TTS via the same endpoint as `mandarinai-flashcard` | Node (gsap + hyperframes), ffmpeg |
+| `mandarinai-story-video` | Graded-story 1080x1440 learner videos with ruby pinyin, approximate character reveal, translations, TTS, title/end cards; use `mandarinai-video` for promos and other tutorials | Swan `/tts`; real article sentences can come from the video source helper | Node (gsap + hyperframes), ffmpeg |
+
+### Content-driven video production
+
+`mandarinai-video` reads Goose content records and links back to Swan: words at
+`/hsk/word/detail/{id}`, grammar at `/grammar/detail/{id}`, universities at
+`/university/detail/{id}`, and processed articles at `/tools/articles/{id}`.
+It also accepts saved detail exports. The workflow draws on
+[huashu-motion](https://github.com/alchaincyf/huashu-motion) and
+[huashu-art-motion](https://github.com/alchaincyf/huashu-art-motion), using this
+repository's own renderer and MandarinAi assets.
+
+From `skills/mandarinai-video/`, with real input paths and a new output directory:
+
+```bash
+python3 scripts/prepare-content.py --kind grammar --id REAL_ID --out /absolute/task/source.json
+python3 scripts/build-project.py /absolute/task/brief.json --source /absolute/task/source.json --out /absolute/task/project --tts
+python3 scripts/render-project.py /absolute/task/project --output /absolute/task/tutorial-v1.mp4
+```
+
+The agent authors the brief against the source; see
+[`references/production.md`](skills/mandarinai-video/references/production.md)
+and four example briefs. Narration uses local audio or Swan `/tts`; `--silent`
+explicitly makes a silent draft. Captions are phrase-level SRT sidecars, not burned
+subtitles. MP4 output includes verification and review frames. Samples are marked
+synthetic and use real library URLs rather than invented published IDs.
+Generation reads data and writes local artifacts; publishing and Goose/Swan
+changes are separate tasks.
+
+Video regression checks (no API calls):
+
+```bash
+python3 -m unittest discover -s skills/mandarinai-video/tests -v
+# Optional local browser/FFmpeg integration checks, after installing video dependencies:
+node --test skills/mandarinai-video/tests/browser-smoke.mjs
+# Set MANDARIN_VIDEO_BROWSER=/path/to/chrome to use an installed browser.
+```
 
 ### One-time dependencies
 
@@ -81,8 +117,10 @@ rebranded and heavily modified for MandarinAi; attribution notices are kept in e
 copy sits inside each): `mandarinai-ppt`, `mandarinai-social-card`,
 `mandarinai-illustration` (from 歸藏's guizang skills) and `mandarinai-wechat-layout`
 (from gzh-design-skill by 甲木 × 摸鱼小李). `mandarinai-video` includes Apache-2.0
-render-pipeline code from nexu-io/html-video (see its `LICENSE`). The remaining
-skills are MIT.
+render-pipeline code from nexu-io/html-video (see its `LICENSE`). Its new project
+workflow references Huashu's production methods without bundling their runtimes
+or demo assets; source links and licensing context are in
+`skills/mandarinai-video/references/motion-direction.md`. The remaining skills are MIT.
 
 ## Layout
 

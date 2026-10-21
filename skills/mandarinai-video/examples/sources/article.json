@@ -1,0 +1,21 @@
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "_fixture": {"synthetic": true, "note": "Synthetic processed article for offline workflow examples; demo-article is not a published article ID and media URLs are placeholders."},
+    "id": "demo-article",
+    "title": "每天学习一点中文",
+    "original_text": "我每天学习中文。\n\n今天，我学习一个新词。",
+    "chinese_text": "我每天学习中文。\n\n今天，我学习一个新词。",
+    "is_public": true,
+    "user_id": "demo-author",
+    "author_id": "demo-author",
+    "metadata": {"recommended_hsk_level": 1, "source_url": "", "total_characters": 22},
+    "sentences": [
+      {"id": 900301, "chinese": "我每天学习中文。", "pinyin": "Wǒ měitiān xuéxí Zhōngwén.", "sentence_order": 1, "is_paragraph_start": true, "translations": [{"language": "en", "translation": "I study Chinese every day."}], "word_segments": [{"text": "我", "pinyin": "wǒ", "type": 0, "word_info": {"hsk_word_id": 900311, "word": "我", "pinyin": "wǒ", "hsk_level": 1, "is_hsk_word": true, "translations": [{"language": "en", "translation": "I; me"}]}}, {"text": "每天", "pinyin": "měitiān", "type": 0}, {"text": "学习", "pinyin": "xuéxí", "type": 0, "word_info": {"hsk_word_id": 900001, "word": "学习", "pinyin": "xuéxí", "hsk_level": 1, "is_hsk_word": true, "translations": [{"language": "en", "translation": "to study; to learn"}]}}, {"text": "中文", "pinyin": "Zhōngwén", "type": 0}, {"text": "。", "pinyin": "", "type": 1}]},
+      {"id": 900302, "chinese": "今天，我学习一个新词。", "pinyin": "Jīntiān, wǒ xuéxí yí ge xīn cí.", "sentence_order": 2, "is_paragraph_start": true, "translations": [{"language": "en", "translation": "Today, I learn a new word."}], "word_segments": [{"text": "今天", "pinyin": "jīntiān", "type": 0}, {"text": "，", "pinyin": "", "type": 1}, {"text": "我", "pinyin": "wǒ", "type": 0}, {"text": "学习", "pinyin": "xuéxí", "type": 0}, {"text": "一个", "pinyin": "yí ge", "type": 0}, {"text": "新词", "pinyin": "xīn cí", "type": 2}, {"text": "。", "pinyin": "", "type": 1}]}
+    ],
+    "content_blocks": [{"type": "sentence", "sentence_index": 0}, {"type": "image", "src": "https://example.invalid/study-desk.jpg", "alt": "Synthetic study scene placeholder", "caption": "每天一点，慢慢进步。", "source": "synthetic fixture placeholder"}, {"type": "sentence", "sentence_index": 1}],
+    "grammar_points": [{"pattern": "每天 + 动词", "explanation": "Describe an action repeated every day.", "examples": ["我每天学习中文。"], "hsk_level": 1}]
+  }
+}

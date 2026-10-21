@@ -1,0 +1,49 @@
+{
+  "source": "source.json",
+  "mode": "promo",
+  "format": "landscape",
+  "style": "ink",
+  "fps": 30,
+  "title": "大学介绍 · 虚构资料演示",
+  "scenes": [
+    {
+      "layout": "hero",
+      "label": "FICTIONAL DEMO",
+      "heading": "示例中文大学",
+      "text": "Example Chinese University",
+      "translation": "Fictional institution for an offline video demo.",
+      "narration": "这是大学介绍视频的虚构资料演示。",
+      "duration": 5
+    },
+    {
+      "layout": "facts",
+      "label": "FICTIONAL DEMO",
+      "heading": "从学校与地点开始",
+      "bullets": [
+        "示例市 · 示例省",
+        "示例国家",
+        "本科项目资料示例"
+      ],
+      "narration": "先看学校和地点，再了解项目资料。",
+      "duration": 6
+    },
+    {
+      "layout": "facts",
+      "label": "FICTIONAL DEMO",
+      "heading": "了解校区与学习生活",
+      "text": "示例校区",
+      "translation": "Use verified campus photos when producing a real university video.",
+      "narration": "真实制作时，使用学校的实际校区资料。",
+      "duration": 6
+    },
+    {
+      "layout": "cta",
+      "label": "MANDARINAI · DEMO",
+      "heading": "探索真实大学资料",
+      "text": "Open the university library.",
+      "translation": "Check the official institution page for current admissions details.",
+      "narration": "到 MandarinAi 探索大学，并核实最新的官方招生信息。",
+      "duration": 6
+    }
+  ]
+}

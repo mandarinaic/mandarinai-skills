@@ -1,0 +1,23 @@
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "_fixture": {"synthetic": true, "note": "Synthetic content for offline video workflow examples; ID 900001 is a sentinel, not a verified published word."},
+    "id": 900001,
+    "word": "学习",
+    "word_t": "學習",
+    "pinyin": "xué xí",
+    "hsk_level": 1,
+    "part_of_speech": "verb",
+    "english": "to study; to learn",
+    "meaning": "to study; to learn",
+    "meanings": {"en": "to study; to learn", "es": "estudiar; aprender"},
+    "structured_examples": [
+      {"id": 900011, "example_order": 1, "chinese": "我学习汉语。", "pinyin": "Wǒ xuéxí Hànyǔ.", "translations": {"en": "I study Chinese.", "es": "Estudio chino."}}
+    ],
+    "download_example": {"chinese": "我学习汉语。", "pinyin": "Wǒ xuéxí Hànyǔ.", "en": "I study Chinese.", "es": "Estudio chino."},
+    "synonyms": [],
+    "antonyms": [],
+    "meaning_quiz_options": [{"meaning": "to study; to learn", "is_correct": true}, {"meaning": "to sleep", "is_correct": false}]
+  }
+}
