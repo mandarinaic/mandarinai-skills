@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "source": {
+    "repository": "https://github.com/chineseplus/swan",
+    "revision": "5f539c6b13f45f2fd98a847820986da49038fb09",
+    "profiles": "utils/characters.ts",
+    "casting": "composables/useVoiceCasting.ts",
+    "voices": "composables/useWordVideoGenerator.ts#CHINESE_VOICES",
+    "portraits": "public/images/characters/{id}/calm.webp",
+    "voice_selection": "Gender match, excluding voices younger than 14 for adult characters, then nearest nominal age and voice ID as tie breaker."
+  },
+  "characters": [
+    {
+      "id": "yue",
+      "name": "Yue",
+      "role": "Mandarin Learning Guide",
+      "tier": "guide",
+      "age": 22,
+      "gender": "female",
+      "voice": "zh-CN-XiaoxuanNeural",
+      "portrait": "yue-calm.webp",
+      "traits": [
+        "warm",
+        "encouraging",
+        "curious",
+        "intelligent",
+        "expressive"
+      ],
+      "hanzi": "悦"
+    },
+    {
+      "id": "jin",
+      "name": "Jin",
+      "role": "Grammar & Culture Mentor",
+      "tier": "guide",
+      "age": 58,
+      "gender": "male",
+      "voice": "zh-CN-YunyangNeural",
+      "portrait": "jin-calm.webp",
+      "traits": [
+        "wise",
+        "patient",
+        "calm",
+        "reassuring"
+      ],
+      "hanzi": "金"
+    },
+    {
+      "id": "lian",
+      "name": "Lian",
+      "role": "Foodie & Culture Guide",
+      "tier": "guide",
+      "age": 26,
+      "gender": "female",
+      "voice": "zh-CN-XiaoxiaoNeural",
+      "portrait": "lian-calm.webp",
+      "traits": [
+        "sophisticated",
+        "elegant",
+        "witty"
+      ],
+      "hanzi": "莲"
+    },
+    {
+      "id": "bai",
+      "name": "Bai",
+      "role": "AI Mandarin Learning Genius",
+      "tier": "guide",
+      "age": 18,
+      "gender": "male",
+      "voice": "zh-CN-YunxiNeural",
+      "portrait": "bai-calm.webp",
+      "traits": [
+        "tech-savvy",
+        "meme-aware",
+        "fast-thinking"
+      ],
+      "hanzi": "白"
+    },
+    {
+      "id": "maya",
+      "name": "Maya",
+      "role": "Beginner Mandarin Learner",
+      "tier": "learner",
+      "age": 16,
+      "gender": "female",
+      "voice": "zh-CN-XiaoyiNeural",
+      "portrait": "maya-calm.webp",
+      "traits": [
+        "curious",
+        "expressive",
+        "energetic"
+      ]
+    },
+    {
+      "id": "amir",
+      "name": "Amir",
+      "role": "Young Arab Professional Mandarin Learner",
+      "tier": "learner",
+      "age": 24,
+      "gender": "male",
+      "voice": "zh-CN-YunxiNeural",
+      "portrait": "amir-calm.webp",
+      "traits": [
+        "ambitious",
+        "calm",
+        "friendly",
+        "global"
+      ]
+    },
+    {
+      "id": "grace",
+      "name": "Grace",
+      "role": "Lifelong Mandarin Learner",
+      "tier": "learner",
+      "age": 63,
+      "gender": "female",
+      "voice": "zh-CN-XiaoxiaoNeural",
+      "portrait": "grace-calm.webp",
+      "traits": [
+        "elegant",
+        "witty",
+        "patient"
+      ]
+    }
+  ]
+}

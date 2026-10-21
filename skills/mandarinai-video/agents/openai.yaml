@@ -1,8 +1,8 @@
 interface:
   display_name: "MandarinAi Video"
-  short_description: "Promo and tutorial videos from Goose content and Swan pages"
+  short_description: "Named presenters, dialogue, and beat-timed MandarinAi videos"
   brand_color: "#1b46a2"
-  default_prompt: "Use $mandarinai-video to make a narrated tutorial or promo from this MandarinAi word, grammar, university, or processed article."
+  default_prompt: "Use $mandarinai-video to make a narrated tutorial or promo from this MandarinAi word, grammar, university, or processed article, with a suitable named presenter, measured speech, and optional beat-timed music."
 
 policy:
   allow_implicit_invocation: true

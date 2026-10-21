@@ -6,12 +6,12 @@
   },
   "metadata": {
     "description": "MandarinAi agent skills - web PPT decks, social cards, content casting, paper/book reading, writing, WeChat 公众号, Mandarin learner tools",
-    "version": "0.3.0"
+    "version": "0.4.0"
   },
   "plugins": [
     {
       "name": "mandarinai-skills",
-      "description": "Web PPT decks, social cards, content casting, paper/book reading, writing, WeChat, Goose/Swan promo and tutorial videos, HSK flashcards, graded readers, and story videos",
+      "description": "Web PPT decks, social cards, content casting, paper/book reading, writing, WeChat, named-cast Goose/Swan videos with dialogue and beat timing, HSK flashcards, graded readers, and story videos",
       "source": "./",
       "strict": false,
       "skills": [

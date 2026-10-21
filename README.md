@@ -30,7 +30,7 @@ accent yellow `#ffc107`, the 中文-badge logo, and the 19-character brand unive
 | `mandarinai-wechat-layout` | WeChat 公众号 layout engine — Markdown/docx/PDF → themed inline-styled HTML that pastes into the 公众号 editor without losing styles; 6 theme component libraries + theme generator, auto chapter numbering, keyword underlines, dual lint/validate scripts, copy-button preview page | python3 (validators) |
 | `mandarinai-video-fetch` | Video link → clean transcript (YouTube / bilibili / xiaohongshu / douyin); feeds mandarinai-writes / card / ppt | yt-dlp + ffmpeg; whisper for no-sub videos |
 | `mandarinai-book` | 拆书 — deconstructs a book (问题/零点/位移/落点/行囊) + ASCII cognitive map; grounds on web or local EPUB/PDF | none (pdftotext for PDFs outside Claude Code) |
-| `mandarinai-video` | Promo/tutorial MP4s for Goose HSK words, grammar, universities, and processed articles; real Swan links, editable preview, measured narration, SRT, verified audio/video; standalone templates retained | Python 3 + Node + Playwright + ffmpeg |
+| `mandarinai-video` | Promo/tutorial MP4s for Goose HSK words, grammar, universities, and processed articles; real Swan links, seven named presenters, dialogue, BPM/cues, quiet music, editable preview, measured narration, SRT, verified audio/video; standalone templates retained | Python 3 + Node + Playwright + ffmpeg |
 
 ### Mandarin learner tools
 
@@ -69,6 +69,25 @@ and four example briefs. Narration uses local audio or Swan `/tts`; `--silent`
 explicitly makes a silent draft. Captions are phrase-level SRT sidecars, not burned
 subtitles. MP4 output includes verification and review frames. Samples are marked
 synthetic and use real library URLs rather than invented published IDs.
+
+Use `cast: {"presenter":"jin"}` for a grammar mentor, `yue` for a learning guide,
+`bai` for AI/product help, or `lian` for food/culture. Maya, Amir, and Grace are
+learner dialogue partners. A scene can contain up to four named `lines`, each
+with its own measured voice track, real Swan portrait, caption, and active-speaker
+highlight. Stable voices come from the bundled registry or explicit overrides;
+`--voice` controls only an unnamed narrator.
+
+Optional `timing: {"bpm":96,"beats_per_bar":4,"snap":"bar"}` extends scene endings
+to the beat grid after speech and reading holds. Named scene cues resolve to
+frame times for deterministic reveals. It never accelerates or cuts speech.
+For original quiet music, run
+`python3 scripts/make-music-bed.py --bpm 96 --bars 32 --out /absolute/task/music.wav`
+from the video skill directory and set the brief's `bgm` path. Music fades and
+ducks beneath speech by default. Supplied tracks need their own matching BPM
+and offset; there is no automatic tempo detection or stretching. The preview is
+silent; review the final audio in the MP4. This is the repository's local
+pipeline, not the upstream OM studio or a general music composer.
+
 Generation reads data and writes local artifacts; publishing and Goose/Swan
 changes are separate tasks.
 
@@ -107,7 +126,7 @@ brew install ffmpeg
 - Name is always written **MandarinAi** (Chinese contexts: **MandarinAi中文学习网**); site `https://www.mandarinai.com`; tagline **Learn Chinese the Smart Way**.
 - Brand blue `#1b46a2`, accent yellow `#ffc107`, HSK level palette, Noto Sans SC / Noto Serif SC — each visual skill carries a "MandarinAi 品牌基调" block in its SKILL.md.
 - Official marks (transparent PNG): horizontal wordmark + square icon in `skills/mandarinai-illustration/assets/brand/`; `skills/mandarinai-card/assets/logo.png` is the circle-crop-safe avatar version used in card signatures.
-- Character universe: model sheets in `skills/mandarinai-illustration/assets/characters/`, casting guide + generation workflow in `references/characters.md` of the same skill. 3D `.glb` versions of every character exist outside this repo.
+- Character universe: video portraits in `skills/mandarinai-video/assets/cast/` are final cropped Swan assets; illustration model sheets in `skills/mandarinai-illustration/assets/characters/`, casting guide + generation workflow in `references/characters.md` of the same skill. 3D `.glb` versions of every character exist outside this repo.
 
 ## Credits & licensing
 

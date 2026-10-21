@@ -1,7 +1,7 @@
 {
   "name": "mandarinai-video",
-  "version": "0.2.0",
-  "description": "MandarinAi content promos and tutorials (HTML, narration, subtitles, MP4)",
+  "version": "0.3.0",
+  "description": "MandarinAi promo/tutorial videos with named cast, beat cues, measured narration, music, subtitles, and MP4",
   "license": "Apache-2.0",
   "dependencies": {
     "playwright": "1.59.1"

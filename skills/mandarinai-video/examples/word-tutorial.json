@@ -5,6 +5,15 @@
   "style": "clean",
   "fps": 30,
   "title": "学习 · 词汇教程示例",
+  "cast": {
+    "presenter": "yue"
+  },
+  "timing": {
+    "bpm": 96,
+    "beats_per_bar": 4,
+    "snap": "beat",
+    "offset": 0
+  },
   "scenes": [
     {
       "layout": "hero",
@@ -17,7 +26,14 @@
       ],
       "translation": "to study; to learn",
       "narration": "今天，我们一起学一个词，学习。",
-      "duration": 5
+      "duration": 5,
+      "beats": 8,
+      "cues": [
+        {
+          "id": "content",
+          "beat": 1
+        }
+      ]
     },
     {
       "layout": "lesson",

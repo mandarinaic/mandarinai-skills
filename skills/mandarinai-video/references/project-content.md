@@ -163,6 +163,12 @@ relative image storage keys as `https://i.cdnl.ink/KEY` (Swan `formatImage`);
 retain absolute URLs. Reuse real university photos and SVG mascot assets rather
 than making up campus evidence, logos, or product screens.
 
+## Character assets and voice source
+
+The seven human companions are Yue (`yue`, Mandarin Learning Guide), Jin (`jin`, Grammar & Culture Mentor), Bai (`bai`, AI Mandarin Learning Genius), Lian (`lian`, Foodie & Culture Guide), Maya (`maya`, Beginner Mandarin Learner), Amir (`amir`, Young Arab Professional Mandarin Learner), and Grace (`grace`, Lifelong Mandarin Learner). These roles come from Swan's `utils/characters.ts`; age/gender and stable voice matching come from `composables/useVoiceCasting.ts`, rather than assumptions based on names.
+
+This skill bundles their registry and real `calm.webp` sprites in `assets/cast/`. Swan exports those clean single-person portraits under `public/images/characters/ID/calm.webp` using its character pipeline. They are final reusable scene assets, distinct from the illustration skill's full character model sheets. Use the registry for an explicit presenter and scene/line speakers; see [production.md](production.md) for overrides and the dialogue schema. The twelve zodiac characters remain outside this local video cast.
+
 ## Existing Swan export versus local production
 
 Swan already exports individual word videos through `components/Words/Export.vue`
@@ -187,7 +193,9 @@ Inspect sibling checkouts `../goose` and `../swan` before assuming these contrac
 have changed. Swan sources: `api/{word,grammar,articles,user,program}.ts`,
 `composables/{httpConfig,useLanguagePreference,useHskColors,useWordVideoGenerator}`,
 the corresponding `pages/` files, `utils/{grammarTitles,universityGallery}.ts`,
-`plugins/tool.ts`, `nuxt.config.ts`, and `server/routes/tts.get.ts`.
+`plugins/tool.ts`, `nuxt.config.ts`, `server/routes/tts.get.ts`,
+`utils/characters.ts`, `composables/useVoiceCasting.ts`, and
+`public/images/characters/` for portraits.
 Consult Goose detail handlers and response structs to confirm wire fields and
 public visibility. `api/types.ts` is useful context, but some interfaces lag the
 actual detail pages. Keep all project inspection read-only for video generation.

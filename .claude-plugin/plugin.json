@@ -1,7 +1,7 @@
 {
   "name": "mandarinai-skills",
-  "version": "0.3.0",
-  "description": "MandarinAi agent skills - content creation, narrated promo/tutorial videos from Goose and Swan, HSK flashcards, graded readers, and story videos",
+  "version": "0.4.0",
+  "description": "MandarinAi agent skills - content creation, named-cast promo/tutorial videos with beat timing from Goose and Swan, HSK flashcards, graded readers, and story videos",
   "author": {
     "name": "MandarinAi",
     "url": "https://www.mandarinai.com"

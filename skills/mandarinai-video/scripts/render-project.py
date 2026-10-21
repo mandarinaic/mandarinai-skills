@@ -61,6 +61,19 @@ def measured_audio(path):
     return value
 
 
+def speaker_id(value, characters, label):
+    if value is not None and (not isinstance(value, str) or value not in characters):
+        fail(f"{label} must name a character in cast.characters")
+    return value
+
+
+def voice_tracks(manifest):
+    """Yield the validated local tracks, including legacy scene audio."""
+    for scene in manifest["scenes"]:
+        for track in scene["resolved_voice_tracks"]:
+            yield scene, track
+
+
 def validate(project, manifest):
     if not isinstance(manifest, dict) or manifest.get("schema_version") != 1:
         fail("project.json must use schema_version 1")
@@ -75,6 +88,16 @@ def validate(project, manifest):
     scenes = manifest.get("scenes")
     if not isinstance(scenes, list) or not 1 <= len(scenes) <= 24:
         fail("project must contain 1 to 24 scenes")
+    cast = manifest.get("cast", {})
+    if not isinstance(cast, dict) or not isinstance(cast.get("characters", {}), dict):
+        fail("cast.characters must be an object")
+    characters = cast.get("characters", {})
+    for identifier, profile in characters.items():
+        if not isinstance(identifier, str) or not isinstance(profile, dict) or profile.get("id", identifier) != identifier:
+            fail("cast character IDs and profiles do not agree")
+        if profile.get("portrait"):
+            local(project, profile["portrait"], f"{identifier} portrait")
+    speaker_id(cast.get("presenter"), characters, "cast presenter")
     total_frames = 0
     for i, scene in enumerate(scenes, 1):
         if not isinstance(scene, dict):
@@ -88,7 +111,35 @@ def validate(project, manifest):
         if abs(duration - frames / fps) > 1e-7 or abs(start - total_frames / fps) > 1e-7:
             fail(f"scene {i}: frame count, duration, and contiguous start do not agree")
         total_frames += frames
-        scene["audio_path"] = local(project, scene["audio"], f"scene {i} audio") if scene.get("audio") else None
+        speaker_id(scene.get("speaker"), characters, f"scene {i} speaker")
+        scene["audio_path"] = None
+        scene["resolved_voice_tracks"] = []
+        # An explicit track list supersedes the single audio field, so a project
+        # cannot accidentally play its compatibility narration twice.
+        if "voice_tracks" in scene:
+            tracks = scene["voice_tracks"]
+            if not isinstance(tracks, list):
+                fail(f"scene {i} voice_tracks must be an array")
+            previous_end = 0
+            for j, track in enumerate(tracks, 1):
+                label = f"scene {i} voice track {j}"
+                if not isinstance(track, dict):
+                    fail(f"{label} must be an object")
+                speaker_id(track.get("speaker"), characters, f"{label} speaker")
+                path = local(project, track.get("file"), f"{label} file")
+                offset = finite(track.get("start"), f"{label} start", high=120)
+                recorded = finite(track.get("duration"), f"{label} duration", high=120, positive=True)
+                actual = measured_audio(path)
+                if abs(actual - recorded) > 0.15:
+                    fail(f"{label} audio duration changed; rebuild the project")
+                if offset < previous_end - 1e-7:
+                    fail(f"{label} overlaps an earlier narration track")
+                if offset + max(actual, recorded) > duration + 1 / fps:
+                    fail(f"{label} extends past its scene; rebuild with a longer duration")
+                previous_end = offset + max(actual, recorded)
+                scene["resolved_voice_tracks"].append({**track, "path": path, "actual_duration": actual})
+        elif scene.get("audio"):
+            scene["audio_path"] = local(project, scene["audio"], f"scene {i} audio")
         if scene["audio_path"]:
             if manifest["audio_mode"] == "silent":
                 fail("a silent manifest cannot contain narration audio")
@@ -99,6 +150,9 @@ def validate(project, manifest):
                 fail(f"scene {i} audio duration changed; rebuild the project")
             if offset + actual > duration + 1 / fps:
                 fail(f"scene {i} narration extends past its scene; rebuild with a longer duration")
+            scene["resolved_voice_tracks"].append({"file": scene["audio"], "path": scene["audio_path"], "start": offset, "duration": recorded, "actual_duration": actual, "speaker": scene.get("speaker"), "voice": scene.get("voice")})
+        if scene["resolved_voice_tracks"] and manifest["audio_mode"] != "narrated":
+            fail("narration audio requires audio_mode narrated")
     if manifest.get("frames") != total_frames or abs(finite(manifest.get("duration"), "duration", positive=True) - total_frames / fps) > 1e-7:
         fail("project frame count and duration do not match its scenes")
     if manifest.get("bgm"):
@@ -107,11 +161,55 @@ def validate(project, manifest):
             fail("bgm is invalid for this audio_mode")
         bgm["path"] = local(project, bgm.get("file"), "bgm file")
         bgm["volume"] = finite(bgm.get("volume"), "bgm volume", high=1)
+        if "duck" in bgm and not isinstance(bgm["duck"], bool):
+            fail("bgm duck must be true or false")
         measured_audio(bgm["path"])
-    expected_audio = any(s["audio_path"] for s in scenes) or bool(manifest.get("bgm"))
+    has_voice = any(s["resolved_voice_tracks"] for s in scenes)
+    expected_audio = has_voice or bool(manifest.get("bgm"))
     if (manifest["audio_mode"] != "silent") != expected_audio:
         fail("audio_mode disagrees with the available audio tracks")
+    if (manifest["audio_mode"] == "narrated") != has_voice:
+        fail("audio_mode narrated requires narration audio")
+    if "expected_audio" in manifest and (not isinstance(manifest["expected_audio"], bool) or manifest["expected_audio"] != expected_audio):
+        fail("expected_audio disagrees with the available audio tracks")
     return width, height, fps, total_frames, expected_audio
+
+
+def audio_mix_command(joined, completed, manifest, duration):
+    """Mix measured voices at scene-local starts, duck music, and pad the CTA."""
+    command = ["ffmpeg", "-n", "-v", "error", "-i", str(joined)]
+    filters, voices, mixed = [], [], []
+    input_index = 1
+    for scene, track in voice_tracks(manifest):
+        command.extend(["-i", str(track["path"])])
+        offset_ms = round((scene["start"] + track["start"]) * 1000)
+        label = f"voice{input_index}"
+        filters.append(f"[{input_index}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,loudnorm=I=-16:TP=-1.5:LRA=11,adelay={offset_ms}:all=1[{label}]")
+        voices.append(f"[{label}]")
+        input_index += 1
+    duck = bool(voices and manifest.get("bgm") and manifest["bgm"].get("duck", True))
+    if voices:
+        filters.append("".join(voices) + f"amix=inputs={len(voices)}:duration=longest:normalize=0,apad,atrim=duration={duration},asetpts=N/SR/TB[voicebus]")
+        if duck:
+            filters.append("[voicebus]asplit=2[narration][sidechain]")
+            mixed.append("[narration]")
+        else:
+            mixed.append("[voicebus]")
+    if manifest.get("bgm"):
+        bgm = manifest["bgm"]
+        command.extend(["-stream_loop", "-1", "-i", str(bgm["path"])])
+        fade = min(1.5, duration / 4)
+        filters.append(f"[{input_index}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,volume={bgm['volume']},atrim=duration={duration},asetpts=N/SR/TB,afade=t=in:st=0:d={fade},afade=t=out:st={duration - fade}:d={fade}[music]")
+        if duck:
+            filters.append("[music][sidechain]sidechaincompress=threshold=0.04:ratio=6:attack=20:release=320:makeup=1[duckedmusic]")
+            mixed.append("[duckedmusic]")
+        else:
+            mixed.append("[music]")
+    if not mixed:
+        fail("cannot mix a project without audio")
+    filters.append("".join(mixed) + f"amix=inputs={len(mixed)}:duration=longest:normalize=0,alimiter=limit=0.95:level=0,apad,atrim=duration={duration},asetpts=N/SR/TB[audio]")
+    command.extend(["-filter_complex", ";".join(filters), "-map", "0:v:0", "-map", "[audio]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-t", str(duration), "-movflags", "+faststart", str(completed)])
+    return command
 
 
 def concat_line(path):
@@ -161,27 +259,7 @@ def render(args):
         run(["ffmpeg", "-n", "-v", "error", "-f", "concat", "-safe", "0", "-i", str(concat_path), "-map", "0:v:0", "-c:v", "copy", str(joined)])
         completed = work / "completed.mp4"
         if expected_audio:
-            command = ["ffmpeg", "-n", "-v", "error", "-i", str(joined)]
-            filters, tracks = [], []
-            input_index = 1
-            for scene in manifest["scenes"]:
-                if not scene["audio_path"]:
-                    continue
-                command.extend(["-i", str(scene["audio_path"])])
-                offset_ms = round((scene["start"] + scene["audio_offset"]) * 1000)
-                label = f"voice{input_index}"
-                filters.append(f"[{input_index}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,loudnorm=I=-16:TP=-1.5:LRA=11,adelay={offset_ms}:all=1[{label}]")
-                tracks.append(f"[{label}]")
-                input_index += 1
-            if manifest.get("bgm"):
-                bgm = manifest["bgm"]
-                command.extend(["-stream_loop", "-1", "-i", str(bgm["path"])])
-                fade = min(1.5, duration / 4)
-                filters.append(f"[{input_index}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,volume={bgm['volume']},atrim=duration={duration},afade=t=in:st=0:d={fade},afade=t=out:st={duration - fade}:d={fade}[music]")
-                tracks.append("[music]")
-            filters.append("".join(tracks) + f"amix=inputs={len(tracks)}:duration=longest:normalize=0,alimiter=limit=0.95:level=0,apad,atrim=duration={duration},asetpts=N/SR/TB[audio]")
-            command.extend(["-filter_complex", ";".join(filters), "-map", "0:v:0", "-map", "[audio]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-t", str(duration), "-movflags", "+faststart", str(completed)])
-            run(command)
+            run(audio_mix_command(joined, completed, manifest, duration))
         else:
             run(["ffmpeg", "-n", "-v", "error", "-i", str(joined), "-map", "0:v:0", "-c:v", "copy", "-an", "-t", str(duration), "-movflags", "+faststart", str(completed)])
         evidence = probe(completed)
@@ -212,6 +290,16 @@ def render(args):
             run(["ffmpeg", "-n", "-v", "error", "-ss", str(max(0, time)), "-i", str(completed), "-frames:v", "1", "-update", "1", str(qa_temp / filename)])
             frames.append({"file": str(qa_dir / filename), "time": time})
         report = {"schema_version": 1, "output": str(output), "project": str(project), "expected_duration": duration, "duration": actual_duration, "width": video["width"], "height": video["height"], "fps": actual_fps, "frames": int(video.get("nb_frames", total_frames)), "video_codec": video["codec_name"], "pixel_format": video["pix_fmt"], "audio_expected": expected_audio, "audio_codec": audio["codec_name"] if audio else None, "audio_duration": audio_seconds if audio else None, "audio_mode": manifest["audio_mode"], "pending_narration": manifest.get("pending_narration", False), "caption_file": str(project / "captions.srt"), "caption_note": "Sidecar phrase-level captions; not burned in or character-aligned.", "checks": {"duration_within_two_frames": True, "dimensions_and_fps": True, "audio_expected": True, "audio_covers_full_video": bool(audio) if expected_audio else None, "h264_yuv420p": True}, "visual_qa": {"status": "pending human/agent inspection", "frames": frames}, "ffprobe": evidence}
+        narration = [{"file": track["file"], "speaker": track.get("speaker"), "voice": track.get("voice"),
+                      "start": scene["start"] + track["start"], "duration": track["actual_duration"]}
+                     for scene, track in voice_tracks(manifest)]
+        speakers = sorted({track["speaker"] for track in narration if track["speaker"]})
+        report.update({"speakers": speakers, "speaker_count": len(speakers),
+                       "voice_track_count": len(narration), "narration_tracks": narration,
+                       "narration_seconds": sum(track["duration"] for track in narration),
+                       "timing": manifest.get("timing"),
+                       "bpm": (manifest.get("timing") or {}).get("bpm", manifest.get("bpm")),
+                       "bgm_ducked": bool(narration and manifest.get("bgm") and manifest["bgm"].get("duck", True))})
         # Link creation is atomic and refuses replacement, including a racing output creation.
         staged = output.parent / f".{output.name}.{os.getpid()}.partial"
         try:

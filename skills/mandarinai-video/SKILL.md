@@ -1,8 +1,8 @@
 ---
 name: mandarinai-video
-description: "Generate MandarinAi promo or tutorial MP4s for HSK words, grammar, universities, and processed articles from Goose data and Swan pages. Use for 宣传片、教程视频、语法讲解、词汇教学、大学介绍、文章解读, product walkthroughs, launch clips, or animated HTML scenes. Includes editable previews, narration, subtitles, and local rendering. Sentence-by-sentence graded-story read-alongs use mandarinai-story-video; fetching existing videos uses mandarinai-video-fetch."
+description: "Generate MandarinAi promo or tutorial MP4s for HSK words, grammar, universities, and processed articles from Goose data and Swan pages. Use for 宣传片、教程视频、语法讲解、词汇教学、大学介绍、文章解读, product walkthroughs, launch clips, or animated HTML scenes. Includes named MandarinAi presenters and dialogue, beat timing, quiet music, editable previews, narration, subtitles, and local rendering. Sentence-by-sentence graded-story read-alongs use mandarinai-story-video; fetching existing videos uses mandarinai-video-fetch."
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 # MandarinAi video
@@ -39,7 +39,7 @@ For a UI walkthrough, capture the real resolved Swan page after its content, fon
 
 Read [production.md](references/production.md) for the schema and commands, and [motion-direction.md](references/motion-direction.md) for pacing, explanation techniques, and review. Choose one visual direction; offer alternatives when requested. A reviewable storyboard and preview are deliverables, not a mandatory approval stop.
 
-Write `brief.json` with `mode`, `format`, `style`, and `scenes`. Use one claim or learning step per scene. The four sample briefs show useful narrative shapes:
+Write `brief.json` with `mode`, `format`, `style`, and `scenes`. Use one claim or learning step per scene. Select a named presenter explicitly: Yue for a warm learning guide, Jin for grammar/culture, Bai for AI/product help, or Lian for food/culture. Maya, Amir, and Grace can join as learner dialogue partners. The local cast registry and real cropped Swan portraits are bundled under `assets/cast/`; keep a character’s face and voice consistent. The four sample briefs show useful narrative shapes:
 
 | Source | Tutorial | Promo |
 | --- | --- | --- |
@@ -50,7 +50,9 @@ Write `brief.json` with `mode`, `format`, `style`, and `scenes`. Use one claim o
 
 Use the record's pinyin, meaning, translation, and HSK level where available; check polyphonic readings before narration. Per-Hanzi ruby needs one tone-marked syllable per Hanzi; use natural word-level pinyin separately when ruby is inappropriate. HSK internal level `7` is displayed as `7–9`. Do not assert a whole example is at a level merely because its target word is.
 
-Prefer existing suitable audio, a local recording, or Swan's `/tts` for intelligible Mandarin narration. Do not substitute an unverified voice model for pronunciation teaching. Scene timing comes from measured audio plus a reading/retrieval hold. Character highlights without alignment are approximate; generated SRT has phrase-level timing.
+Use `cast: {"presenter":"jin"}` and optional scene `speaker`; for a conversation use up to four `lines` with named `speaker`, `text`, and optional pinyin/translation. Each utterance gets a measured voice track, caption, portrait, and active-speaker highlight. Unknown named speakers fail; never infer a new voice from a name. See the production reference for stable voice overrides.
+
+Prefer existing suitable audio, a local recording, or Swan's `/tts` for intelligible Mandarin narration. Do not substitute an unverified voice model for pronunciation teaching. Scene timing comes from measured audio plus a reading/retrieval hold. Optional `timing` adds BPM and beat/bar boundaries; snapping only extends a scene after speech and holds. Use scene `cues` for frame-resolved reveals. These cues use this skill’s `renderAt` contract, not upstream `OM.cue`. Character highlights without alignment are approximate; generated SRT has phrase-level timing.
 
 ## 3. Build and preview
 
@@ -59,11 +61,11 @@ python3 scripts/build-project.py /absolute/task/brief.json \
   --source /absolute/task/source.json --out /absolute/task/project --tts
 ```
 
-`--tts` uses Swan `/tts?text=...&voice=...`, keeping upstream credentials on Swan. Use `--tts-url` for a local Swan origin. Each line must fit its 200 UTF-16-unit limit. Local per-scene `audio` also works. If narration is unavailable, fix it or explicitly build a silent draft with `--silent`; the manifest records this choice. Do not quietly drop failed audio.
+`--tts` uses Swan `/tts?text=...&voice=...`, keeping upstream credentials on Swan. Use `--tts-url` for a local Swan origin. Each line must fit its 200 UTF-16-unit limit. Local scene/line `audio` also works. Named voices come from the cast registry or explicit `cast.overrides`; `--voice` affects only an unnamed narrator. If narration is unavailable, fix it or explicitly build a silent draft with `--silent`; the manifest records this choice. Do not quietly drop failed audio.
 
-The builder creates self-contained scene HTML, a seekable `preview.html`, `project.json`, `source.json`, `script.md`, `captions.srt`, and local assets. Inspect the first content scene, the densest scene, and the CTA in the preview. Rebuild into a new directory after brief changes. Starters support `clean`, `editorial`, and `ink` palettes plus hero, lesson, facts, comparison, screenshot, and CTA layouts. For bespoke motion, edit the generated scene and preserve `window.renderAt(seconds)`.
+The builder creates self-contained scene HTML, a seekable `preview.html`, `project.json`, `source.json`, `script.md`, `captions.srt`, and local assets. The preview is silent; seek it to inspect dialogue, portraits, and cue reveals, then review audio in the rendered MP4. Inspect the first content scene, the densest scene, and the CTA in the preview. Rebuild into a new directory after brief changes. Starters support `clean`, `editorial`, and `ink` palettes plus hero, lesson, facts, comparison, screenshot, and CTA layouts. For bespoke motion, edit the generated scene and preserve `window.renderAt(seconds)`.
 
-Optional music must be a local file the user can use. Keep it below narration, with fades. Captions are a sidecar, not burned into the video; learning text remains visible in the scenes.
+Optional `bgm` uses a local track, with fades and speech ducking by default. For an original quiet synthesized bed, run `python3 scripts/make-music-bed.py --bpm 96 --bars 32 --out /absolute/task/music.wav`, then reference that file in the brief. Choose matching BPM/offset for imported music; the pipeline does not detect or stretch its tempo. Prioritize clear learner audio. Captions are a sidecar, not burned into the video; learning text remains visible in the scenes.
 
 ## 4. Render, review, deliver
 

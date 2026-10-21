@@ -5,6 +5,15 @@
   "style": "editorial",
   "fps": 30,
   "title": "用“比”比较 · 语法教程示例",
+  "cast": {
+    "presenter": "jin"
+  },
+  "timing": {
+    "bpm": 96,
+    "beats_per_bar": 4,
+    "snap": "bar",
+    "offset": 0
+  },
   "scenes": [
     {
       "layout": "hero",
@@ -12,7 +21,14 @@
       "heading": "怎么说“更热”？",
       "text": "用“比”比较",
       "narration": "今天，我们用比来比较。",
-      "duration": 5
+      "duration": 5,
+      "beats": 8,
+      "cues": [
+        {
+          "id": "content",
+          "beat": 1
+        }
+      ]
     },
     {
       "layout": "facts",
@@ -39,9 +55,36 @@
         "rè"
       ],
       "translation": "Today is hotter than yesterday.",
-      "narration": "今天比昨天热。",
       "duration": 7,
-      "hold": 3
+      "hold": 3,
+      "lines": [
+        {
+          "speaker": "yue",
+          "text": "今天比昨天热。",
+          "pinyin": [
+            "jīn",
+            "tiān",
+            "bǐ",
+            "zuó",
+            "tiān",
+            "rè"
+          ],
+          "translation": "Today is hotter than yesterday."
+        },
+        {
+          "speaker": "maya",
+          "text": "今天比昨天热。",
+          "pinyin": [
+            "jīn",
+            "tiān",
+            "bǐ",
+            "zuó",
+            "tiān",
+            "rè"
+          ],
+          "translation": "Today is hotter than yesterday."
+        }
+      ]
     },
     {
       "layout": "comparison",
@@ -51,9 +94,10 @@
         "B · 昨天"
       ],
       "text": "今天比昨天热。",
-      "narration": "今天和昨天，谁更热？",
+      "narration": "今天和昨天，哪一天更热？",
       "duration": 6,
-      "hold": 3
+      "hold": 3,
+      "speaker": "jin"
     },
     {
       "layout": "lesson",
@@ -69,7 +113,8 @@
       ],
       "translation": "Today is hotter than yesterday.",
       "narration": "今天更热。再读一遍，今天比昨天热。",
-      "duration": 6
+      "duration": 6,
+      "speaker": "jin"
     },
     {
       "layout": "cta",

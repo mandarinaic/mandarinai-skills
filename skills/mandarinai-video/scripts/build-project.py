@@ -15,6 +15,9 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from production_support import load_cast, resolve_speaker, timing_config, snap_end_frame, cue_times
+
 ROOT = Path(__file__).resolve().parent.parent
 FORMATS = {"portrait": (1080, 1920), "landscape": (1920, 1080), "square": (1080, 1080)}
 LAYOUTS = {"hero", "lesson", "facts", "comparison", "screenshot", "cta"}
@@ -126,6 +129,16 @@ def fetch_tts(text, voice, url, path):
         fail(f"TTS request failed (no silent fallback): {error}")
 
 
+def speaker_name(profile):
+    return " ".join(value for value in (profile["name"], profile.get("hanzi", "")) if value)
+
+
+def safe_json(value):
+    return (json.dumps(value, ensure_ascii=False, allow_nan=False)
+            .replace("<", "\\u003c").replace("&", "\\u0026")
+            .replace("\u2028", "\\u2028").replace("\u2029", "\\u2029"))
+
+
 def build(args):
     brief_path = Path(args.brief).resolve()
     brief = load_json(brief_path)
@@ -133,11 +146,12 @@ def build(args):
     out = Path(args.out).resolve()
     if out.exists():
         fail(f"output directory already exists: {out}; choose a new directory")
-    source = load_json(local_file(args.source, Path.cwd(), "--source") if args.source else local_file(brief.get("source"), base, "source"))
+    source = load_json(local_file(args.source, Path.cwd(), "--source") if args.source
+                       else local_file(brief.get("source"), base, "source"))
     if source.get("kind") not in {"word", "grammar", "university", "article"}:
         fail("source.kind must be word, grammar, university, or article")
-    if not isinstance(source.get("id"), (str, int)) or isinstance(source.get("id"), bool) or str(source["id"]).strip() == "":
-        fail("source.id must be a nonempty string or number")
+    if not isinstance(source.get("id"), (str, int)) or isinstance(source.get("id"), bool) or not str(source["id"]).strip():
+        fail("source.id must be a nonempty string or integer")
     for key in ("title", "url", "language"):
         string(source.get(key), f"source.{key}")
     if not isinstance(source.get("content"), dict):
@@ -167,104 +181,235 @@ def build(args):
     inputs = brief.get("scenes")
     if not isinstance(inputs, list) or not 1 <= len(inputs) <= 24:
         fail("scenes must contain 1 to 24 scene objects")
+    timing = timing_config(brief.get("timing"))
+    named = any(isinstance(s, dict) and (s.get("speaker") is not None or "lines" in s) for s in inputs)
+    cast = load_cast(brief.get("cast", {} if named else None), ROOT / "assets")
 
-    # Validate the entire brief before creating its output directory or fetching TTS.
+    # Validate all local inputs before creating files or requesting narration.
     prepared = []
     for i, scene in enumerate(inputs, 1):
         if not isinstance(scene, dict) or scene.get("layout") not in LAYOUTS:
-            fail(f"scene {i}: layout must be one of {', '.join(sorted(LAYOUTS))}")
+            fail(f"scene {i}: invalid layout")
         data = dict(scene)
         data["heading"] = string(scene.get("heading"), f"scene {i} heading", 120)
         for key in ("text", "translation", "label", "caption", "narration"):
-            data[key] = string(scene.get(key, ""), f"scene {i} {key}", 800 if key == "text" else 1000, allow_empty=True)
-        if len(data["narration"].encode("utf-16-le")) // 2 > 200:
-            fail(f"scene {i}: narration exceeds Swan's 200 UTF-16 character limit; split the line")
+            data[key] = string(scene.get(key, ""), f"scene {i} {key}", 1000, allow_empty=True)
         data["text_html"] = ruby_text(data["text"], scene.get("pinyin"))
+        profile = resolve_speaker(cast, scene.get("speaker"))
+        data["profile"] = profile
+        show = scene.get("show_presenter", True)
+        if not isinstance(show, bool):
+            fail(f"scene {i}: show_presenter must be true or false")
+        data["show_presenter"] = show
+        data["hold"] = number(scene.get("hold", 1), f"scene {i} hold", high=30)
+        beats = scene.get("beats")
+        if beats is not None and timing is None:
+            fail(f"scene {i}: beats requires timing.bpm")
+        beat_duration = number(beats, f"scene {i} beats", high=1024, positive=True) * timing["seconds_per_beat"] if beats is not None else 0
+        data["duration"] = max(number(scene.get("duration", beat_duration or 4), f"scene {i} duration", positive=True), beat_duration)
+        if scene.get("snap") is not None and scene["snap"] not in {"none", "beat", "bar"}:
+            fail(f"scene {i}: snap must be none, beat, or bar")
+        cue_times(scene.get("cues", []), 120, fps, timing)
         bullets = scene.get("bullets", [])
         if not isinstance(bullets, list) or len(bullets) > 6:
             fail(f"scene {i}: bullets must be a list of at most 6 strings")
         data["bullets"] = [string(b, f"scene {i} bullet", 180) for b in bullets]
-        data["duration"] = number(scene.get("duration", 4), f"scene {i} duration", positive=True)
-        data["hold"] = number(scene.get("hold", 1), f"scene {i} hold", high=30)
         data["image_path"] = local_file(scene["image"], base, f"scene {i} image") if scene.get("image") else None
         if data["image_path"] and data["image_path"].suffix.lower() not in {".png", ".jpg", ".jpeg", ".webp"}:
-            fail(f"scene {i}: image must be a local PNG, JPEG, or WebP raster (SVG/HTML are not embedded)")
+            fail(f"scene {i}: image must be a local PNG, JPEG, or WebP raster")
         if scene["layout"] == "screenshot" and not data["image_path"]:
             fail(f"scene {i}: screenshot layout requires a local image")
-        data["audio_path"] = local_file(scene["audio"], base, f"scene {i} audio") if scene.get("audio") else None
-        data["measured_audio"] = audio_duration(data["audio_path"]) if data["audio_path"] else 0
-        if data["narration"] and not data["audio_path"] and not args.tts and not args.silent:
-            fail(f"scene {i}: narration needs local audio or --tts; use --silent only for an explicitly silent draft")
+        has_lines = "lines" in scene
+        if has_lines:
+            lines = scene["lines"]
+            if not isinstance(lines, list) or not 1 <= len(lines) <= 4:
+                fail(f"scene {i}: lines must contain 1 to 4 dialogue utterances")
+            if data["narration"] or scene.get("audio"):
+                fail(f"scene {i}: use lines or narration/audio, not both")
+        else:
+            lines = [{"speaker": scene.get("speaker"), "text": data["narration"],
+                      "audio": scene.get("audio"), "caption": data["caption"]}]
+        speech = []
+        for j, line in enumerate(lines, 1):
+            if not isinstance(line, dict):
+                fail(f"scene {i} line {j}: expected an object")
+            if has_lines and not line.get("speaker"):
+                fail(f"scene {i} line {j}: a named speaker is required")
+            person = resolve_speaker(cast, line.get("speaker")) if has_lines else profile
+            text = string(line.get("text", ""), f"scene {i} line {j} text", 1000, allow_empty=not has_lines)
+            if len(text.encode("utf-16-le")) // 2 > 200:
+                fail(f"scene {i} line {j}: narration exceeds Swan's 200 UTF-16 character limit")
+            path = local_file(line["audio"], base, f"scene {i} line {j} audio") if line.get("audio") else None
+            measured = audio_duration(path) if path else 0
+            if text and not path and not args.tts and not args.silent:
+                fail(f"scene {i}: narration needs local audio or --tts; use --silent only for an explicitly silent draft")
+            gap = number(line.get("pause_after", .35 if j < len(lines) else 0),
+                         f"scene {i} line {j} pause_after", high=30)
+            translation = string(line.get("translation", ""), f"scene {i} line {j} translation", 800, allow_empty=True)
+            caption = string(line.get("caption", ""), f"scene {i} line {j} caption", 1000, allow_empty=True) or text
+            speech.append({"profile": person, "text": text, "text_html": ruby_text(text, line.get("pinyin")) if has_lines else "",
+                           "pinyin": line.get("pinyin"), "translation": translation, "caption": caption,
+                           "audio_path": path, "measured": measured, "pause_after": gap})
+        data["speech"] = speech
+        data["has_lines"] = has_lines
+        data["named_tracks"] = has_lines or profile is not None
+        if has_lines:
+            data["narration"] = "\n".join(line["text"] for line in speech)
         prepared.append(data)
     bgm_path = local_file(brief["bgm"], base, "bgm") if brief.get("bgm") else None
     bgm_seconds = audio_duration(bgm_path) if bgm_path else 0
-    bgm_volume = number(brief.get("bgm_volume", 0.12), "bgm_volume", high=1)
-    template = (ROOT / "assets" / "project-scene.html").read_text(encoding="utf-8")
+    bgm_volume = number(brief.get("bgm_volume", .12), "bgm_volume", high=1)
+    bgm_duck = brief.get("bgm_duck", True)
+    if not isinstance(bgm_duck, bool):
+        fail("bgm_duck must be true or false")
+    template = (ROOT / "assets/project-scene.html").read_text(encoding="utf-8")
     out.mkdir(parents=True, exist_ok=False)
     try:
         (out / "assets").mkdir()
         (out / "scenes").mkdir()
         for name in ("mandarinai-logo.png", "mandarinai-icon.png"):
-            shutil.copyfile(ROOT / "assets" / "brand" / name, out / "assets" / name)
+            shutil.copyfile(ROOT / "assets/brand" / name, out / "assets" / name)
+        if cast["characters"]:
+            (out / "assets/cast").mkdir()
+            for person in cast["characters"].values():
+                filename = person["portrait"]
+                shutil.copyfile(ROOT / "assets/cast" / filename, out / "assets/cast" / filename)
+                person["portrait"] = f"assets/cast/{filename}"
         (out / "source.json").write_text(json.dumps(source, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        scenes = []
+        scenes, subtitles = [], []
         total_frames = 0
-        subtitles = []
-        script = [f"# {title}", "", f"Source: {source['url']}", f"Mode: {mode} · Style: {style} · {width}×{height} · {fps} fps", "", "Captions use one phrase per scene; timing follows measured audio, without character-level alignment.", ""]
+        script = [f"# {title}", "", f"Source: {source['url']}",
+                  f"Mode: {mode} · Style: {style} · {width}×{height} · {fps} fps",
+                  "Phrase-level captions; measured speech timing, without character alignment.", ""]
+        if timing:
+            script.extend([f"Tempo: {timing['bpm']} BPM · {timing['beats_per_bar']} beats/bar · snap {timing['snap']}", ""])
         for i, data in enumerate(prepared, 1):
             image_path = None
             if data["image_path"]:
                 image_path = f"assets/scene-{i:02}-image{data['image_path'].suffix.lower()}"
                 shutil.copyfile(data["image_path"], out / image_path)
-            audio_path, seconds = None, 0
-            if not args.silent and data["audio_path"]:
-                audio_path = f"assets/scene-{i:02}-audio{data['audio_path'].suffix.lower()}"
-                shutil.copyfile(data["audio_path"], out / audio_path)
-                seconds = data["measured_audio"]
-            elif not args.silent and data["narration"] and args.tts:
-                audio_path = f"assets/scene-{i:02}-voice.mp3"
-                fetch_tts(data["narration"], args.voice, args.tts_url, out / audio_path)
-                seconds = audio_duration(out / audio_path)
-            duration = max(data["duration"], seconds + 0.5 + data["hold"] if audio_path else 0)
-            frames = max(1, math.ceil(duration * fps - 1e-9))
-            duration = frames / fps
+            tracks, dialogue = [], []
+            cursor, speech_end = .5, 0
+            single_audio, single_seconds = None, 0
+            for j, line in enumerate(data["speech"], 1):
+                person = line["profile"]
+                voice = person["voice"] if person else (getattr(args, "voice", None) or "zh-CN-XiaoxiaoNeural")
+                prefix = f"scene-{i:02}-line-{j:02}" if data["has_lines"] else f"scene-{i:02}"
+                path, seconds, provenance = None, 0, None
+                if not args.silent and line["audio_path"]:
+                    path = f"assets/{prefix}-audio{line['audio_path'].suffix.lower()}"
+                    shutil.copyfile(line["audio_path"], out / path)
+                    seconds, provenance = line["measured"], "local"
+                elif not args.silent and line["text"] and args.tts:
+                    path = f"assets/{prefix}-voice.mp3"
+                    fetch_tts(line["text"], voice, args.tts_url, out / path)
+                    seconds, provenance = audio_duration(out / path), "tts"
+                if args.silent and data["named_tracks"] and (line["text"] or line["audio_path"]):
+                    seconds = line["measured"] or max(.8, len(HANZI.findall(line["text"])) * .26)
+                if path:
+                    tracks.append({"file": path, "speaker": person["id"] if person else None,
+                                   "voice": voice if provenance == "tts" else None, "source": provenance,
+                                   "start": cursor, "duration": seconds, "caption": line["caption"]})
+                if data["has_lines"]:
+                    dialogue.append({"speaker": person["id"], "text": line["text"], "pinyin": line["pinyin"],
+                                     "translation": line["translation"], "caption": line["caption"],
+                                     "start": cursor, "duration": seconds, "audio": path,
+                                     "timing_method": "estimated" if args.silent else "measured"})
+                if path or (args.silent and data["named_tracks"] and seconds):
+                    speech_end = cursor + seconds
+                    cursor = speech_end + line["pause_after"]
+                if not data["has_lines"]:
+                    single_audio, single_seconds = path, seconds if path else 0
+            minimum = max(data["duration"], cursor + data["hold"] if speech_end else 0)
+            end_frame = max(total_frames + 1, snap_end_frame(total_frames, minimum, fps, timing, data.get("snap")))
+            frames = end_frame - total_frames
+            duration, start = frames / fps, total_frames / fps
             if duration > 120:
-                fail(f"scene {i}: audio and hold require {duration:.2f}s, exceeding 120s; split the scene")
-            start = total_frames / fps
+                fail(f"scene {i}: audio/hold/grid require {duration:.3f}s; split the scene")
+            cues = cue_times(data.get("cues", []), duration, fps, timing)
+            person = data["profile"] or (data["speech"][0]["profile"] if data["has_lines"] else None)
             caption = data["caption"] or data["narration"]
-            item = {"file": f"scenes/scene-{i:02}.html", "layout": data["layout"], "heading": data["heading"], "start": start, "duration": duration, "frames": frames, "narration": data["narration"], "audio": audio_path, "audio_duration": seconds, "audio_offset": 0.5 if audio_path else 0, "caption": caption, "pending_narration": bool(args.silent and (data["narration"] or data["audio_path"]))}
+            item = {"file": f"scenes/scene-{i:02}.html", "layout": data["layout"], "heading": data["heading"],
+                    "start": start, "duration": duration, "frames": frames, "narration": data["narration"],
+                    "audio": single_audio, "audio_duration": single_seconds,
+                    "audio_offset": .5 if single_audio else 0, "caption": caption,
+                    "speaker": person["id"] if person else None, "lines": dialogue, "cues": cues,
+                    "minimum_duration": minimum, "hold": data["hold"],
+                    "pending_narration": bool(args.silent and any(l["text"] or l["audio_path"] for l in data["speech"]))}
+            if data["named_tracks"]:
+                item["voice_tracks"] = tracks
             scenes.append(item)
-            total_frames += frames
-            footer = source["url"] if data["layout"] == "cta" else (data["label"] or source_url.netloc)
+            total_frames = end_frame
+            presenter_html = ""
+            if person and data["show_presenter"]:
+                presenter_html = (f'<aside class="presenter-strip"><img class="presenter-portrait" '
+                                  f'src="../{person["portrait"]}" alt="{html.escape(person["name"], quote=True)}">'
+                                  f'<div><strong class="presenter-name">{html.escape(speaker_name(person))}</strong>'
+                                  f'<span class="presenter-role">{html.escape(person["role"])}</span></div></aside>')
+            dialogue_html = ""
+            if dialogue:
+                articles = []
+                for line, prepared_line in zip(dialogue, data["speech"]):
+                    profile = cast["characters"][line["speaker"]]
+                    articles.append(
+                        f'<article class="dialogue-line" data-speaker="{profile["id"]}" '
+                        f'data-line-start="{line["start"]}" data-line-end="{line["start"] + line["duration"]}">'
+                        f'<img class="dialogue-portrait" src="../{profile["portrait"]}" alt="{profile["name"]}">'
+                        f'<div><div class="speaker-name">{html.escape(speaker_name(profile))}</div>'
+                        f'<p class="line-chinese">{prepared_line["text_html"]}</p>'
+                        f'<p class="line-translation">{html.escape(line["translation"])}</p></div></article>')
+                dialogue_html = '<div class="dialogue-lines">' + "".join(articles) + '</div>'
+            payload = {"duration": duration, "speaker": item["speaker"], "presenter": person,
+                       "cast": cast["characters"], "lines": dialogue,
+                       "voice_tracks": tracks, "timing": timing, "cues": cues}
             replacements = {
                 "TITLE": html.escape(title), "STYLE": style, "LAYOUT": data["layout"], "MODE": mode,
                 "DURATION": str(duration), "WIDTH": str(width), "HEIGHT": str(height),
                 "LABEL": html.escape(data["label"] or f"{source['kind']} · {mode}"),
                 "HEADING": html.escape(data["heading"]), "TEXT": data["text_html"],
-                "TRANSLATION": html.escape(data["translation"]), "FOOTER": html.escape(footer),
-                "BULLETS": "".join(f'<li data-enter="{0.45 + n * 0.12:.2f}"><span>{n + 1:02}</span><div>{html.escape(b)}</div></li>' for n, b in enumerate(data["bullets"])),
-                "IMAGE": f'<figure data-enter="0.30"><img src="../{image_path}" alt="{html.escape(data["heading"], quote=True)}"></figure>' if image_path else "",
+                "TRANSLATION": html.escape(data["translation"]),
+                "FOOTER": html.escape(source["url"] if data["layout"] == "cta" else (data["label"] or source_url.netloc)),
+                "BULLETS": "".join(f'<li data-enter="{.45 + n * .12:.2f}"><span>{n+1:02}</span><div>{html.escape(b)}</div></li>' for n,b in enumerate(data["bullets"])),
+                "IMAGE": f'<figure data-enter=".30"><img src="../{image_path}" alt="{html.escape(data["heading"], quote=True)}"></figure>' if image_path else "",
                 "INDEX": f"{i:02}", "COUNT": f"{len(prepared):02}",
+                "SCENE_DATA": safe_json(payload), "PRESENTER_HTML": presenter_html, "DIALOGUE_HTML": dialogue_html,
             }
-            scene_html = re.sub(r"@@([A-Z]+)@@", lambda match: replacements[match[1]], template)
+            scene_html = re.sub(r"@@([A-Z_]+)@@", lambda match: replacements[match[1]], template)
             (out / item["file"]).write_text(scene_html, encoding="utf-8")
-            if caption:
-                caption_start = start + (0.5 if audio_path else 0.35)
-                caption_end = start + min(duration, 0.5 + seconds if audio_path else duration - 0.15)
-                if caption_end > caption_start:
-                    subtitles.append(f"{len(subtitles) + 1}\n{srt_time(caption_start)} --> {srt_time(caption_end)}\n{caption}\n")
-            script.extend([f"## {i:02} · {data['heading']}", f"{start:.3f}s–{start + duration:.3f}s · {data['layout']}", "", data["text"], data["translation"], "", f"Narration: {data['narration'] or '(no narration text)'}", f"Audio: {audio_path or ('PENDING — explicitly silent draft' if item['pending_narration'] else 'none')}", f"Caption: {caption or '(none)'}", ""])
+            # One subtitle per measured utterance; silent drafts use estimated line timing.
+            entries = dialogue if dialogue else [{"start": .5 if single_audio else .35,
+                       "duration": single_seconds if single_audio else max(0, duration - .5), "caption": caption}]
+            for entry in entries:
+                text = entry["caption"]
+                cue_start = start + entry["start"]
+                cue_end = min(start + duration - .05, cue_start + entry["duration"])
+                if text and cue_end > cue_start:
+                    subtitles.append(f"{len(subtitles)+1}\n{srt_time(cue_start)} --> {srt_time(cue_end)}\n{text}\n")
+            script.extend([f"## {i:02} · {data['heading']}", f"{start:.3f}s–{start+duration:.3f}s · {data['layout']}",
+                           "", data["text"], data["translation"], ""])
+            for line in data["speech"]:
+                label = speaker_name(line["profile"]) if line["profile"] else "Narrator"
+                script.extend([f"{label}: {line['text'] or '(recording without script)'}"])
+            script.extend([f"Audio: {'PENDING — explicitly silent draft' if item['pending_narration'] else ', '.join(t['file'] for t in tracks) or 'none'}", ""])
         bgm = None
         if bgm_path and not args.silent:
-            bgm = {"file": f"assets/bgm{bgm_path.suffix.lower()}", "duration": bgm_seconds, "volume": bgm_volume}
+            bgm = {"file": f"assets/bgm{bgm_path.suffix.lower()}", "duration": bgm_seconds,
+                   "volume": bgm_volume, "duck": bgm_duck}
             shutil.copyfile(bgm_path, out / bgm["file"])
-        manifest = {"schema_version": 1, "title": title, "mode": mode, "style": style, "format": format_name, "dimensions": {"width": width, "height": height}, "fps": fps, "duration": total_frames / fps, "frames": total_frames, "source": source, "source_snapshot": "source.json", "audio_mode": "silent" if args.silent else ("narrated" if any(s["audio"] for s in scenes) else ("music" if bgm else "silent")), "pending_narration": any(s["pending_narration"] for s in scenes), "bgm": bgm, "caption_timing": "Phrase-level per scene; measured audio start/end where available. No forced character alignment.", "scenes": scenes}
-        (out / "project.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        has_voice = any(s.get("voice_tracks") or s["audio"] for s in scenes)
+        manifest = {"schema_version": 1, "title": title, "mode": mode, "style": style, "format": format_name,
+                    "dimensions": {"width": width, "height": height}, "fps": fps,
+                    "duration": total_frames / fps, "frames": total_frames, "source": source,
+                    "source_snapshot": "source.json", "cast": cast, "timing": timing,
+                    "audio_mode": "narrated" if has_voice else "music" if bgm else "silent",
+                    "pending_narration": any(s["pending_narration"] for s in scenes), "bgm": bgm,
+                    "caption_timing": "Phrase-level per utterance; measured where audio exists, estimated in silent drafts. No forced character alignment.",
+                    "scenes": scenes}
+        (out / "project.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
         (out / "captions.srt").write_text("\n".join(subtitles), encoding="utf-8")
         (out / "script.md").write_text("\n".join(script), encoding="utf-8")
         (out / "preview.html").write_text(preview_html(manifest), encoding="utf-8")
     except Exception:
-        # A failed build never resembles a complete project, and can be retried.
         shutil.rmtree(out)
         raise
     print(f"Project: {out}\n{len(scenes)} scenes · {manifest['duration']:.3f}s · {width}×{height} · {fps} fps · audio: {manifest['audio_mode']}")
@@ -272,11 +417,12 @@ def build(args):
         print("Narration is PENDING: --silent intentionally omitted the voice tracks. See script.md.")
 
 
+
 def preview_html(manifest):
     payload = json.dumps({"scenes": manifest["scenes"], "dimensions": manifest["dimensions"]}, ensure_ascii=False).replace("<", "\\u003c").replace("&", "\\u0026")
     return f'''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{html.escape(manifest['title'])} — preview</title>
 <style>body{{margin:0;background:#e7ebe9;color:#16382b;font:16px system-ui}}header{{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:14px 20px}}select,input,button{{font:inherit}}input{{flex:1;min-width:130px}}iframe{{display:block;border:0;transform-origin:top left;background:white}}#stage{{margin:auto;overflow:hidden}}small{{display:block;padding:0 20px 14px}}#time{{font-variant-numeric:tabular-nums}}</style>
-<header><strong>Scene preview</strong><select id="scene"></select><input id="seek" type="range" min="0" value="1" step="0.01"><output id="time"></output></header><small>Drag to inspect deterministic scene time. This preview is silent; project rendering mixes measured audio. Captions: phrase-level, one cue per scene.</small><div id="stage"><iframe title="Video scene" id="frame"></iframe></div>
+<header><strong>Scene preview</strong><select id="scene"></select><input id="seek" type="range" min="0" value="1" step="0.01"><output id="time"></output></header><small>Drag to inspect deterministic scene time. This preview is silent; project rendering mixes measured audio. Captions: phrase-level, one cue per spoken utterance.</small><div id="stage"><iframe title="Video scene" id="frame"></iframe></div>
 <script>const project={payload};const picker=document.querySelector('#scene'),slider=document.querySelector('#seek'),frame=document.querySelector('#frame'),stage=document.querySelector('#stage');project.scenes.forEach((s,i)=>{{const o=document.createElement('option');o.value=i;o.textContent=`${{i+1}} · ${{s.heading}}`;picker.append(o)}});function resize(){{const d=project.dimensions,w=Math.min(innerWidth-32,(innerHeight-130)*d.width/d.height),scale=w/d.width;stage.style.width=w+'px';stage.style.height=d.height*scale+'px';frame.style.width=d.width+'px';frame.style.height=d.height+'px';frame.style.transform=`scale(${{scale}})`}}function seek(){{const t=Number(slider.value);document.querySelector('#time').textContent=t.toFixed(2)+' s';frame.contentWindow.postMessage({{type:'mandarinai:seek',seconds:t}},'*')}}function choose(){{const s=project.scenes[Number(picker.value)];slider.max=s.duration;slider.value=Math.min(1,s.duration);frame.src=s.file}}frame.onload=seek;picker.onchange=choose;slider.oninput=seek;window.onresize=resize;resize();choose();</script></html>'''
 
 
@@ -289,7 +435,7 @@ def main():
     group.add_argument("--tts", action="store_true", help="request voice audio for narration via Swan-compatible GET /tts")
     group.add_argument("--silent", action="store_true", help="explicitly omit all voice/music audio and mark narration pending")
     parser.add_argument("--tts-url", default="https://www.mandarinai.com/tts", help="TTS GET endpoint (only used with --tts)")
-    parser.add_argument("--voice", default="zh-CN-XiaoxiaoNeural", help="TTS voice query parameter")
+    parser.add_argument("--voice", help="unnamed narrator voice; named cast uses registry/overrides")
     args = parser.parse_args()
     try:
         build(args)
