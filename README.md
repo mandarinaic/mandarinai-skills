@@ -30,6 +30,7 @@ accent yellow `#ffc107`, the 中文-badge logo, and the 19-character brand unive
 | `mandarinai-wechat-layout` | WeChat 公众号 layout engine — Markdown/docx/PDF → themed inline-styled HTML that pastes into the 公众号 editor without losing styles; 6 theme component libraries + theme generator, auto chapter numbering, keyword underlines, dual lint/validate scripts, copy-button preview page | python3 (validators) |
 | `mandarinai-video-fetch` | Video link → clean transcript (YouTube / bilibili / xiaohongshu / douyin); feeds mandarinai-writes / card / ppt | yt-dlp + ffmpeg; whisper for no-sub videos |
 | `mandarinai-book` | 拆书 — deconstructs a book (问题/零点/位移/落点/行囊) + ASCII cognitive map; grounds on web or local EPUB/PDF | none (pdftotext for PDFs outside Claude Code) |
+| `mandarinai-game` | Browser 3D games adapted from Chinese stories and books (十二生肖, 西游记, 成语故事…), cast with the MandarinAi characters where they fit; pinyin dialogue + collectible words; procedural motion for the (unrigged) cast models; self-verifying via `window.G` hooks + headless play-check; packs to one offline HTML | Node; Playwright (checks); cast `.glb` sources outside the repo |
 | `mandarinai-video` | Promo/tutorial MP4s for Goose HSK words, grammar, universities, and processed articles; real Swan links, seven named presenters, dialogue, BPM/cues, quiet music, editable preview, measured narration, SRT, verified audio/video; standalone templates retained | Python 3 + Node + Playwright + ffmpeg |
 
 ### Mandarin learner tools
@@ -100,14 +101,32 @@ node --test skills/mandarinai-video/tests/browser-smoke.mjs
 # Set MANDARIN_VIDEO_BROWSER=/path/to/chrome to use an installed browser.
 ```
 
+### Story games
+
+`mandarinai-game` turns a Chinese story or book episode into a small browser 3D game,
+following the staged, self-verifying workflow of
+[guizang-game-skill](https://github.com/op7418/guizang-game-skill). From `skills/mandarinai-game/`:
+
+```bash
+node scripts/new-game.mjs --out /absolute/output/games/zodiac-race --cast rat,ox
+node /absolute/output/games/zodiac-race/serve.mjs          # http://localhost:5173/?auto, ?show=cast
+node scripts/build-single-html.mjs /absolute/output/games/zodiac-race --name zodiac-race
+node --test tests/*.test.mjs                               # scaffold, play, pack, replay packed
+```
+
+The starter is a complete 十二生肖 mini-game (Rui and Bo, a ferry cutscene, three
+collectible words with pinyin, an end card). The character `.glb` sources are static
+meshes, so the cast moves procedurally; rigging is an upgrade path documented in
+`references/cast-3d.md`. Source path: `MANDARINAI_CAST_3D` or `~/Downloads/3D/final`.
+
 ### One-time dependencies
 
-All five Playwright skills pin the same version (1.59.1), so the chromium
+All six Playwright skills pin the same version (1.59.1), so the chromium
 download is shared — it only actually downloads once. Run from the repo root:
 
 ```bash
 # mandarinai-wechat is only needed for optional Chrome-CDP publishing (writing needs nothing)
-for s in card social-card video wechat flashcard; do
+for s in card social-card video wechat flashcard game; do
   (cd "skills/mandarinai-$s" && npm install && npx playwright install chromium)
 done
 
@@ -126,15 +145,15 @@ brew install ffmpeg
 - Name is always written **MandarinAi** (Chinese contexts: **MandarinAi中文学习网**); site `https://www.mandarinai.com`; tagline **Learn Chinese the Smart Way**.
 - Brand blue `#1b46a2`, accent yellow `#ffc107`, HSK level palette, Noto Sans SC / Noto Serif SC — each visual skill carries a "MandarinAi 品牌基调" block in its SKILL.md.
 - Official marks (transparent PNG): horizontal wordmark + square icon in `skills/mandarinai-illustration/assets/brand/`; `skills/mandarinai-card/assets/logo.png` is the circle-crop-safe avatar version used in card signatures.
-- Character universe: video portraits in `skills/mandarinai-video/assets/cast/` are final cropped Swan assets; illustration model sheets in `skills/mandarinai-illustration/assets/characters/`, casting guide + generation workflow in `references/characters.md` of the same skill. 3D `.glb` versions of every character exist outside this repo.
+- Character universe: video portraits in `skills/mandarinai-video/assets/cast/` are final cropped Swan assets; illustration model sheets in `skills/mandarinai-illustration/assets/characters/`, casting guide + generation workflow in `references/characters.md` of the same skill. 3D `.glb` versions of every character (static meshes, unrigged) exist outside this repo; `mandarinai-game` converts them to game assets.
 
 ## Credits & licensing
 
 Several skills started as adaptations of upstream open-source work and have since been
 rebranded and heavily modified for MandarinAi; attribution notices are kept in each
-`SKILL.md`. Four skills remain **AGPL-3.0** per their upstream license (a `LICENSE`
+`SKILL.md`. Five skills remain **AGPL-3.0** per their upstream license (a `LICENSE`
 copy sits inside each): `mandarinai-ppt`, `mandarinai-social-card`,
-`mandarinai-illustration` (from 歸藏's guizang skills) and `mandarinai-wechat-layout`
+`mandarinai-illustration`, `mandarinai-game` (from 歸藏's guizang skills) and `mandarinai-wechat-layout`
 (from gzh-design-skill by 甲木 × 摸鱼小李). `mandarinai-video` includes Apache-2.0
 render-pipeline code from nexu-io/html-video (see its `LICENSE`). Its new project
 workflow references Huashu's production methods without bundling their runtimes

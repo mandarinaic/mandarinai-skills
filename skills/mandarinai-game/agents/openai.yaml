@@ -1,0 +1,8 @@
+interface:
+  display_name: "MandarinAi Game"
+  short_description: "Browser 3D games from Chinese stories, cast with MandarinAi characters"
+  brand_color: "#1b46a2"
+  default_prompt: "Use $mandarinai-game to turn this Chinese story into a small browser 3D game, casting MandarinAi characters where they fit, with pinyin dialogue and collectible words, packed as one offline HTML file."
+
+policy:
+  allow_implicit_invocation: true

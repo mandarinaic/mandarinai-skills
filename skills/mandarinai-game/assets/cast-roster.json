@@ -1,0 +1,26 @@
+{
+  "yawDegrees": 0,
+  "heightNote": "default in-game height in meters; the source meshes are all ~1.1 m. Override with --height.",
+  "sheets": "../mandarinai-illustration/assets/characters/<id>.jpg",
+  "characters": {
+    "rat":     { "name": "Rui",     "height": 1.1, "kind": "zodiac", "role": "Clever Strategist",        "traits": "clever, resourceful, agile, observant" },
+    "ox":      { "name": "Bo",      "height": 1.1, "kind": "zodiac", "role": "Steady Scholar",           "traits": "steady, disciplined, patient, reliable" },
+    "tiger":   { "name": "Kai",     "height": 1.1, "kind": "zodiac", "role": "Confident Voice",          "traits": "bold, energetic, fearless, expressive" },
+    "rabbit":  { "name": "Lina",    "height": 1.1, "kind": "zodiac", "role": "Gentle Starter",           "traits": "gentle, supportive, calm, patient" },
+    "dragon":  { "name": "Wei",     "height": 1.1, "kind": "zodiac", "role": "Mastery Guide",            "traits": "ambitious, wise, graceful, insightful" },
+    "snake":   { "name": "Yu",      "height": 1.1, "kind": "zodiac", "role": "Precise Architect",        "traits": "precise, analytical, calm, observant" },
+    "horse":   { "name": "MaXue",   "height": 1.1, "kind": "zodiac", "role": "Momentum Guide",           "traits": "energetic, optimistic, driven, curious" },
+    "goat":    { "name": "Mei Si",  "height": 1.1, "kind": "zodiac", "role": "Creativity Companion",     "traits": "calm, creative, empathetic, imaginative" },
+    "monkey":  { "name": "Xiang",   "height": 1.1, "kind": "zodiac", "role": "Curiosity Companion",      "traits": "curious, playful, brave, clever" },
+    "rooster": { "name": "Ming",    "height": 1.1, "kind": "zodiac", "role": "Pronunciation Coach",      "traits": "clear, confident, expressive, precise" },
+    "dog":     { "name": "Bao",     "height": 1.1, "kind": "zodiac", "role": "Loyal Guardian",           "traits": "loyal, dependable, supportive, patient" },
+    "pig":     { "name": "Xin",     "height": 1.1, "kind": "zodiac", "role": "Heart Rewarder",           "traits": "warm, compassionate, joyful, generous" },
+    "maya":    { "name": "Maya",    "height": 1.6, "kind": "human",  "role": "Beginner Learner, 16",     "traits": "curious, expressive, energetic, brave" },
+    "bai":     { "name": "Bai",     "height": 1.68, "kind": "human",  "role": "AI Learning Genius, 18",   "traits": "smart, quick, playful, AI-native" },
+    "yue":     { "name": "Yue",     "height": 1.65, "kind": "human",  "role": "Learning Guide, 22",       "traits": "warm, encouraging, curious, intelligent" },
+    "amir":    { "name": "Amir",    "height": 1.75, "kind": "human",  "role": "Young Professional, 24",   "traits": "ambitious, calm, friendly, global" },
+    "lian":    { "name": "Lian",    "height": 1.68, "kind": "human",  "role": "Foodie & Culture Guide, 26","traits": "sophisticated, witty, elegant, observant" },
+    "jin":     { "name": "Jin",     "height": 1.72, "kind": "human",  "role": "Grammar & Culture Mentor, 58","traits": "wise, patient, calm, reassuring" },
+    "grace":   { "name": "Grace",   "height": 1.62, "kind": "human",  "role": "Lifelong Learner, 63",     "traits": "elegant, witty, patient, curious" }
+  }
+}

@@ -80,4 +80,4 @@ No API key → deliver the prompt plan (`PROMPTS.md`) with the `--ref` path note
 ## Source assets
 
 - In-repo sheets (`assets/characters/*.jpg`) are compressed working copies (1600px JPEG). Originals: `~/Downloads/character graph/` (full-res PNG).
-- **3D models**: every character also exists as a rigged 3D `.glb` in `~/Downloads/3D/final/` (same file names) — usable for video, AR, or web-3D contexts. Not vendored into this repo for size reasons.
+- **3D models**: every character also exists as a 3D `.glb` in `~/Downloads/3D/final/` (same file names). They are **static meshes — no skeleton, no animations** (~180k tris, Draco, 4096 textures, ~1.1 m tall). `mandarinai-game/scripts/prepare-cast.mjs` converts them to game-ready assets; see `mandarinai-game/references/cast-3d.md`. Not vendored into this repo for size reasons.

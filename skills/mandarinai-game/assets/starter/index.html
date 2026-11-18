@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MandarinAi Game</title>
+<style>
+  :root { --blue: #1b46a2; --gold: #ffc107; --ink: #1d2433; --ivory: #fbf8f1;
+    --sans: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+    --serif: "Songti SC", "Noto Serif SC", "STSong", "SimSun", serif; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #dfe8f2; font-family: var(--sans); color: var(--ink); }
+  #stage canvas { display: block; touch-action: none; }
+  [hidden] { display: none !important; }
+  .overlay { position: fixed; top: 0; right: 0; bottom: 0; left: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  #title { background: linear-gradient(180deg, rgba(251,248,241,.25), rgba(251,248,241,.85)); }
+  #title img { width: 168px; margin-bottom: 28px; }
+  #title-zh { font-family: var(--serif); font-size: clamp(48px, 9vw, 96px); letter-spacing: .18em; color: var(--blue); margin: 0; }
+  #title-en { font-size: 15px; letter-spacing: .32em; text-transform: uppercase; color: #5a6275; margin: 10px 0 40px; }
+  #start { font: 600 16px var(--sans); letter-spacing: .12em; color: #fff; background: var(--blue); border: 0; border-radius: 999px; padding: 14px 34px; cursor: pointer; box-shadow: 0 6px 0 #10307a; }
+  #loading { font-size: 14px; color: #5a6275; }
+  #hud { position: fixed; top: 0; left: 0; right: 0; padding: calc(14px + var(--sat, 0px)) 18px 0; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
+  #objective { background: rgba(251,248,241,.9); border-left: 4px solid var(--gold); padding: 8px 14px; border-radius: 6px; }
+  #objective b { display: block; font-size: 17px; letter-spacing: .06em; }
+  #objective span { font-size: 12px; color: #5a6275; }
+  #bag { display: flex; gap: 6px; }
+  #bag b { width: 40px; height: 40px; display: grid; place-items: center; font-size: 22px; color: var(--blue); background: var(--gold); border: 2px solid var(--blue); border-radius: 50%; }
+  #prompt { position: fixed; left: 50%; bottom: 34%; transform: translateX(-50%); background: var(--blue); color: #fff; padding: 6px 14px; border-radius: 999px; font-size: 14px; letter-spacing: .08em; }
+  #dialogue { position: fixed; left: 50%; bottom: calc(22px + var(--sab, 0px)); transform: translateX(-50%); width: min(760px, calc(100% - 32px)); background: rgba(251,248,241,.96); border: 2px solid var(--blue); border-radius: 14px; padding: 16px 22px 14px; box-shadow: 0 10px 30px rgba(27,70,162,.18); cursor: pointer; }
+  #dialogue .who { position: absolute; top: -15px; left: 18px; background: var(--blue); color: #fff; font-size: 13px; padding: 4px 12px; border-radius: 999px; letter-spacing: .06em; }
+  #dialogue .zh { font-size: clamp(22px, 4.2vw, 30px); line-height: 2.1; letter-spacing: .04em; }
+  #dialogue .zh ruby { margin: 0 .06em; }
+  #dialogue .zh rt { font-size: .44em; color: var(--blue); letter-spacing: 0; }
+  #dialogue .zh.no-py rt { visibility: hidden; }
+  #dialogue .en { font-family: Georgia, var(--serif); font-style: italic; font-size: 15px; color: #5a6275; margin-top: 2px; }
+  #dialogue .keys { position: absolute; right: 14px; bottom: 8px; font-size: 11px; color: #8a90a0; }
+  #toasts { position: fixed; top: 30%; left: 50%; transform: translateX(-50%); pointer-events: none; }
+  .toast { display: flex; flex-direction: column; align-items: center; background: rgba(251,248,241,.95); border: 2px solid var(--gold); border-radius: 14px; padding: 10px 26px; animation: pop .35s cubic-bezier(.2,1.6,.4,1); }
+  .toast b { font-size: 46px; color: var(--blue); line-height: 1.1; } .toast i { font-style: normal; color: var(--blue); } .toast span { font-size: 13px; color: #5a6275; }
+  @keyframes pop { from { transform: scale(.6); opacity: 0; } }
+  #end { background: rgba(251,248,241,.94); }
+  #end h2 { font-family: var(--serif); font-size: 64px; color: var(--blue); letter-spacing: .2em; margin: 0 0 6px; }
+  #end ul { list-style: none; padding: 0; display: flex; gap: 14px; margin: 26px 0; }
+  #end li { display: flex; flex-direction: column; align-items: center; background: #fff; border: 2px solid var(--gold); border-radius: 12px; padding: 10px 18px; }
+  #end li b { font-size: 36px; color: var(--blue); } #end li i { font-style: normal; color: var(--blue); } #end li span { font-size: 12px; color: #5a6275; }
+  #end img { width: 128px; margin-top: 18px; } #end small { color: #5a6275; letter-spacing: .1em; }
+  #tags .tag { position: fixed; left: 0; top: 0; font-size: 12px; background: rgba(251,248,241,.9); padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+
+<section id="title" class="overlay">
+  <img src="assets/brand/mandarinai-logo.png" alt="MandarinAi">
+  <h1 id="title-zh"></h1>
+  <p id="title-en"></p>
+  <button id="start" hidden>开始 · Start</button>
+  <p id="loading">载入中 · Loading</p>
+</section>
+
+<div id="hud" hidden><div id="objective"></div><div id="bag"></div></div>
+<div id="prompt" hidden>空格 / 点击 说话 · Space to talk</div>
+<div id="toasts"></div>
+<div id="dialogue" hidden><span class="who"></span><div class="zh"></div><div class="en"></div><span class="keys">P 拼音 · T 译文 · Space ▸</span></div>
+
+<section id="end" class="overlay" hidden>
+  <h2>第一名</h2><small>dì yī míng · first place</small>
+  <ul id="end-words"></ul>
+  <img src="assets/brand/mandarinai-logo.png" alt="MandarinAi">
+  <small>Learn Chinese the Smart Way · mandarinai.com</small>
+</section>
+<div id="tags"></div>
+
+<script>
+  /* old engines drop a whole declaration that uses env(); resolve safe areas to plain lengths */
+  (function () { var d = document.createElement('div'); d.style.cssText = 'position:fixed;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inset-bottom,0px)'; document.documentElement.appendChild(d);
+    var cs = getComputedStyle(d); document.documentElement.style.setProperty('--sat', cs.top === 'auto' ? '0px' : cs.top); document.documentElement.style.setProperty('--sab', cs.bottom === 'auto' ? '0px' : cs.bottom); d.remove(); })();
+</script>
+<script type="importmap">
+  { "imports": { "three": "./vendor/three/build/three.module.js", "three/addons/": "./vendor/three/jsm/" } }
+</script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
