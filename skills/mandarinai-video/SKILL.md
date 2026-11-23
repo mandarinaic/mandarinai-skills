@@ -2,7 +2,7 @@
 name: mandarinai-video
 description: "Generate MandarinAi promo or tutorial MP4s for HSK words, grammar, universities, and processed articles from Goose data and Swan pages. Use for 宣传片、教程视频、语法讲解、词汇教学、大学介绍、文章解读, product walkthroughs, launch clips, or animated HTML scenes. Includes named MandarinAi presenters and dialogue, beat timing, quiet music, editable previews, narration, subtitles, and local rendering. Sentence-by-sentence graded-story read-alongs use mandarinai-story-video; fetching existing videos uses mandarinai-video-fetch."
 metadata:
-  version: "0.3.0"
+  version: "0.4.0"
 ---
 
 # MandarinAi video
@@ -74,9 +74,16 @@ python3 scripts/render-project.py /absolute/task/project \
   --output /absolute/task/tutorial-v1.mp4
 ```
 
-The renderer captures scenes at exact frame times, concatenates them, mixes narration/music through the full CTA, and verifies the file with `ffprobe`. Optional `--browser /path/to/chrome` uses an installed executable. Existing outputs are preserved; use a new versioned filename.
+The renderer first checks that every seekable scene draws the same frame whether reached directly or after other seeks; a scene that fails stops the render before capture. It then captures scenes at exact frame times, concatenates them, mixes narration/music through the full CTA, and verifies the file with `ffprobe`. Optional `--browser /path/to/chrome` uses an installed executable. Existing outputs are preserved; use a new versioned filename.
 
-Inspect adjacent `*.verification.json` and representative frames under `*-qa/`. Review the full cut for meaning, pronunciation, reading time, transitions, and audio balance. Machine checks cannot certify instructional accuracy or every layout. Use [motion-direction.md](references/motion-direction.md)'s criteria and record unresolved issues. If a shot clips text, simplify or split it and render again.
+Inspect adjacent `*.verification.json` and the `*-qa/` folder; `review.txt` there indexes every sheet:
+
+- `scan-NN.png`: 3 frames per second, 32 cells per sheet. Look for clipping, overlaps, flashes, empty frames, and scene cuts.
+- `cues-NN.png`: each explicit cue 0.1 s before and 0.35 s after. "Before" must not show the reveal; "after" must.
+- `phone-width.png`: QA stills at 480 px wide. Text a learner must read stays legible.
+- `motion` in the report: advisory only. It flags static stretches and unchanged 2.5 s cells *outside* declared holds; a hold for reading or retrieval is never a defect.
+
+Review the full cut for meaning, pronunciation, reading time, transitions, and audio balance. Machine checks cannot certify instructional accuracy or every layout. Use [motion-direction.md](references/motion-direction.md)'s criteria and record unresolved issues. If a shot clips text, simplify or split it and render again.
 
 Deliver the MP4, captions, project/preview, source provenance, and actual duration/resolution/audio status. State whether captions are sidecar-only and whether audio is synthesized, local, or absent. If rendering fails, explicitly say **MP4 was not rendered**, include the editable project and exact rerun command, and report the concrete missing dependency.
 
@@ -88,7 +95,7 @@ The original six templates remain available: [templates.md](references/templates
 node scripts/render.mjs -o /absolute/task/title-v1.mp4 scene1.html scene2.html
 ```
 
-`-d` sets a shared explicit duration; `-s 1080x1920` sets portrait output; `-f 30` sets fps. This low-level command outputs silent video. Use the project workflow for mixed narration/music. Legacy CSS/GSAP uses virtual time in default `frames` mode; real `<video>` needs `-c screencast`. Seekable scenes instead expose `window.renderAt(t)` and `data-duration` (see authoring reference).
+`--check-determinism auto` (optionally `--report out.json`) checks seek order without rendering. `-d` sets a shared explicit duration; `-s 1080x1920` sets portrait output; `-f 30` sets fps. This low-level command outputs silent video. Use the project workflow for mixed narration/music. Legacy CSS/GSAP uses virtual time in default `frames` mode; real `<video>` needs `-c screencast`. Seekable scenes instead expose `window.renderAt(t)` and `data-duration` (see authoring reference).
 
 ## Dependencies and boundaries
 

@@ -12,6 +12,9 @@ import tempfile
 from fractions import Fraction
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from review_evidence import write_review
+
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -215,6 +218,29 @@ def audio_mix_command(joined, completed, manifest, duration):
     return command
 
 
+def check_determinism(manifest, work, width, height, fps, browser):
+    """Fail before an expensive render when a scene's frame depends on seek order."""
+    scenes = []
+    for i, scene in enumerate(manifest["scenes"], 1):
+        report = work / f"determinism-{i:02}.json"
+        command = ["node", str(ROOT / "scripts" / "render.mjs"), "--check-determinism", "auto", "--report", str(report),
+                   "-d", str(scene["duration"]), "-s", f"{width}x{height}", "-f", str(fps)]
+        if browser:
+            command.extend(["--browser", str(browser)])
+        command.extend(["--", str(scene["html_path"])])
+        result = subprocess.run(command, capture_output=True, text=True)
+        if result.returncode not in (0, 2) or not report.is_file():
+            fail(f"determinism check could not run for scene {i}:\n{(result.stderr or result.stdout)[-4000:]}")
+        checked = json.loads(report.read_text(encoding="utf-8"))["scenes"][0]
+        checked["scene"] = scene["file"]
+        scenes.append(checked)
+        if result.returncode == 2:
+            fail(f"scene {i} ({scene['file']}) renders differently depending on seek order; "
+                 f"renderAt(t) must reset everything it animates:\n{result.stdout.strip()}")
+    status = "skipped" if all(s["status"] == "skipped" for s in scenes) else "pass"
+    return {"status": status, "scenes": scenes}
+
+
 def concat_line(path):
     # ffmpeg concat demuxer quoting, not shell quoting; even a temp root may contain an apostrophe.
     return "file '" + str(path).replace("'", "'\\''") + "'\n"
@@ -246,6 +272,8 @@ def render(args):
     duration = total_frames / fps
     with tempfile.TemporaryDirectory(prefix="mandarinai-render-") as temporary:
         work = Path(temporary)
+        print(f"Checking seek determinism for {len(manifest['scenes'])} scene(s)...", flush=True)
+        determinism = check_determinism(manifest, work, width, height, fps, browser)
         parts = []
         for i, scene in enumerate(manifest["scenes"], 1):
             part = work / f"part-{i:02}.mp4"
@@ -292,7 +320,11 @@ def render(args):
             filename = f"{name}.png"
             run(["ffmpeg", "-n", "-v", "error", "-ss", str(max(0, time)), "-i", str(completed), "-frames:v", "1", "-update", "1", str(qa_temp / filename)])
             frames.append({"file": str(qa_dir / filename), "time": time})
-        report = {"schema_version": 1, "output": str(output), "project": str(project), "expected_duration": duration, "duration": actual_duration, "width": video["width"], "height": video["height"], "fps": actual_fps, "frames": int(video.get("nb_frames", total_frames)), "video_codec": video["codec_name"], "pixel_format": video["pix_fmt"], "audio_expected": expected_audio, "audio_codec": audio["codec_name"] if audio else None, "audio_duration": audio_seconds if audio else None, "audio_mode": manifest["audio_mode"], "pending_narration": manifest.get("pending_narration", False), "caption_file": str(project / "captions.srt"), "caption_note": "Sidecar phrase-level captions; not burned in or character-aligned.", "checks": {"duration_within_two_frames": True, "dimensions_and_fps": True, "audio_expected": True, "audio_covers_full_video": bool(audio) if expected_audio else None, "h264_yuv420p": True}, "visual_qa": {"status": "pending human/agent inspection", "frames": frames}, "ffprobe": evidence}
+        print("Writing review sheets...", flush=True)
+        sheets = write_review(completed, manifest, fps, width, height, total_frames, qa_temp,
+                              [qa_temp / Path(frame["file"]).name for frame in frames])
+        report = {"schema_version": 1, "output": str(output), "project": str(project), "expected_duration": duration, "duration": actual_duration, "width": video["width"], "height": video["height"], "fps": actual_fps, "frames": int(video.get("nb_frames", total_frames)), "video_codec": video["codec_name"], "pixel_format": video["pix_fmt"], "audio_expected": expected_audio, "audio_codec": audio["codec_name"] if audio else None, "audio_duration": audio_seconds if audio else None, "audio_mode": manifest["audio_mode"], "pending_narration": manifest.get("pending_narration", False), "caption_file": str(project / "captions.srt"), "caption_note": "Sidecar phrase-level captions; not burned in or character-aligned.", "checks": {"duration_within_two_frames": True, "dimensions_and_fps": True, "audio_expected": True, "audio_covers_full_video": bool(audio) if expected_audio else None, "h264_yuv420p": True, "seek_determinism": determinism}, "visual_qa": {"status": "pending human/agent inspection", "directory": str(qa_dir), "frames": frames,
+                      "index": str(qa_dir / "review.txt"), **sheets}, "ffprobe": evidence}
         narration = [{"file": track["file"], "speaker": track.get("speaker"), "voice": track.get("voice"),
                       "start": scene["start"] + track["start"], "duration": track["actual_duration"]}
                      for scene, track in voice_tracks(manifest)]
@@ -315,7 +347,8 @@ def render(args):
         with report_path.open("x", encoding="utf-8") as file:
             json.dump(report, file, ensure_ascii=False, indent=2)
             file.write("\n")
-    print(f"MP4: {output}\nVerified: {width}×{height} · {actual_fps:g} fps · {actual_duration:.3f}s · H.264 yuv420p · {'AAC audio' if audio else 'silent'}\nReport: {report_path}\nInspect QA frames: {qa_dir}")
+    print(f"MP4: {output}\nVerified: {width}×{height} · {actual_fps:g} fps · {actual_duration:.3f}s · H.264 yuv420p · {'AAC audio' if audio else 'silent'}\nReport: {report_path}\nInspect QA frames and sheets: {qa_dir} (index: review.txt)\n"
+          f"Motion advisory: {'; '.join(sheets['motion']['notes']) or 'no flagged stretches outside holds'}")
 
 
 def main():

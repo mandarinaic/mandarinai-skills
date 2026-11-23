@@ -77,6 +77,17 @@ test('file preview can seek its opaque-origin iframe without page errors', async
 });
 
 
+function differingPixels(first, second, level = 8) {
+  const decode = png => execFileSync('ffmpeg', ['-v', 'error', '-f', 'png_pipe', '-i', '-', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], { input: png, maxBuffer: 64 * 1024 * 1024 });
+  const a = decode(first), b = decode(second);
+  assert.equal(a.length, b.length);
+  let count = 0;
+  for (let i = 0; i < a.length; i += 3) {
+    if (Math.max(Math.abs(a[i] - b[i]), Math.abs(a[i + 1] - b[i + 1]), Math.abs(a[i + 2] - b[i + 2])) > level) count++;
+  }
+  return count;
+}
+
 async function castFixture(name) {
   const project = join(work, name);
   await mkdir(join(project, 'scenes'), { recursive: true });
@@ -166,9 +177,12 @@ test('cast scenes seek speakers and dialogue purely, honoring visual cues across
         }, t);
         return page.screenshot();
       };
+      // Rasterization may differ by a level or two between paints, so compare
+      // decoded pixels with the same tolerance render.mjs's determinism check uses.
       const secondSpeaker = await settledFrame(1.6);
       await settledFrame(0);
-      assert.deepEqual(await settledFrame(1.6), secondSpeaker, `speaker frame differs after backwards seek at ${viewport.width}x${viewport.height}`);
+      const differing = differingPixels(secondSpeaker, await settledFrame(1.6));
+      assert.ok(differing <= Math.floor(viewport.width * viewport.height * 0.00005), `speaker frame differs after backwards seek at ${viewport.width}x${viewport.height}: ${differing} pixels`);
       assert.deepEqual(errors, []);
       await page.close();
     }
@@ -182,7 +196,8 @@ test('two cast voices and ducked BGM render to a verified full-length MP4', asyn
   }
   const manifest = { schema_version: 1, dimensions: { width: 320, height: 568 }, fps: 10, frames: 40, duration: 4,
     audio_mode: 'narrated', cast: { presenter: 'jin', characters: profiles }, timing: { bpm: 120, beats_per_bar: 4 },
-    bgm: { file: 'assets/music.wav', volume: .12 }, scenes: [{ file: 'scenes/01.html', speaker: 'jin', heading: '想', start: 0, frames: 40, duration: 4, voice_tracks: tracks }] };
+    bgm: { file: 'assets/music.wav', volume: .12 }, scenes: [{ file: 'scenes/01.html', speaker: 'jin', heading: '想', start: 0, frames: 40, duration: 4, voice_tracks: tracks,
+      cues: { content: { seconds: .75, frame: 8, beat: 1.5 } } }] };
   await writeFile(join(project, 'project.json'), JSON.stringify(manifest));
   const output = join(work, 'cast-film.mp4');
   run('python3', ['scripts/render-project.py', project, ...browserArgs, '--output', output]);
@@ -195,4 +210,52 @@ test('two cast voices and ducked BGM render to a verified full-length MP4', asyn
   assert.equal(report.bpm, 120);
   assert.ok(report.checks.audio_covers_full_video);
   assert.ok(Math.abs(report.audio_duration - 4) < .02);
+  assert.equal(report.checks.seek_determinism.status, 'pass');
+  assert.equal(report.visual_qa.scan_sheets.length, 1);
+  assert.equal(report.visual_qa.cue_sheets[0].cues[0].cue, 'content');
+  assert.equal(report.visual_qa.phone_sheet, 'phone-width.png');
+  assert.equal(report.visual_qa.motion.status, 'advisory');
+  for (const name of ['scan-01.png', 'cues-01.png', 'phone-width.png', 'review.txt']) {
+    assert.ok((await readFile(join(work, 'cast-film-qa', name))).length > 0, name);
+  }
+});
+
+const checkDeterminism = (html, extra = []) => {
+  const report = join(work, `determinism-${Math.random().toString(36).slice(2)}.json`);
+  let status = 0;
+  try { run('node', ['scripts/render.mjs', ...browserArgs, '-s', '320x180', '-f', '10', '--check-determinism', 'auto', '--report', report, ...extra, '--', html]); }
+  catch (error) { status = error.status; }
+  return { status, report: JSON.parse(execFileSync('cat', [report])) };
+};
+
+test('determinism check passes a pure renderAt scene at three frame-aligned times', async () => {
+  const html = join(work, 'pure.html');
+  await writeFile(html, `<!doctype html><html data-duration="2"><style>html,body{margin:0;height:100%}#bar{height:100%;background:#1b46a2}</style>
+  <div id="bar"></div><script>window.renderAt=t=>{document.getElementById('bar').style.width=(t/2*100)+'%'};window.renderAt(0);</script></html>`);
+  const { status, report } = checkDeterminism(html);
+  assert.equal(status, 0);
+  assert.equal(report.status, 'pass');
+  assert.deepEqual(report.scenes[0].times, [0.5, 1, 1.5]);
+  assert.equal(report.scenes[0].status, 'pass');
+});
+
+test('determinism check fails a scene whose frame depends on earlier seeks', async () => {
+  const html = join(work, 'leaky.html');
+  await writeFile(html, `<!doctype html><html data-duration="2"><style>html,body{margin:0;height:100%}</style>
+  <script>let furthest=0;window.renderAt=t=>{furthest=Math.max(furthest,t);document.body.style.background=furthest>t+.01?'#ff0000':'#0000ff'};</script></html>`);
+  const { status, report } = checkDeterminism(html);
+  assert.equal(status, 2);
+  assert.equal(report.status, 'fail');
+  const failed = report.scenes[0].comparisons.filter(item => !item.match);
+  assert.ok(failed.length > 0);
+  assert.ok(failed[0].differing_pixels > 1000, JSON.stringify(failed[0]));
+});
+
+test('determinism check skips legacy scenes without renderAt', async () => {
+  const html = join(work, 'legacy-check.html');
+  await writeFile(html, '<!doctype html><style>body{animation:c 1s}@keyframes c{to{background:#00f}}</style>');
+  const { status, report } = checkDeterminism(html, ['-d', '1']);
+  assert.equal(status, 0);
+  assert.equal(report.status, 'skipped');
+  assert.equal(report.scenes[0].status, 'skipped');
 });

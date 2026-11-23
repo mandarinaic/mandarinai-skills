@@ -10,6 +10,9 @@
  *     -c <mode>      capture: "frames" (deterministic, default) | "screencast"
  *     --browser <path>  Chromium/Chrome executable (default Playwright Chromium)
  *     --overwrite       replace an existing output file
+ *     --check-determinism <auto|t,t>  no MP4: compare a fresh seek with the same
+ *                       time reached after other seeks (pixel tolerance for raster
+ *                       noise); exit 2 on mismatch. --report <file.json> saves results.
  *
  * Multiple scenes render individually and are concatenated with ffmpeg.
  * Requires: playwright (npm install in this skill dir) + ffmpeg on PATH.
@@ -49,6 +52,8 @@ let width = 1920, height = 1080;
 let capture = 'frames';
 let browserPath;
 let overwrite = false;
+let determinism = null;
+let reportPath = null;
 const usage = `usage: node scripts/render.mjs [options] scene1.html [scene2.html ...]
   -o <out.mp4>   output path (default ./video.mp4)
   -d <sec|auto>  per-scene duration; otherwise data-duration or legacy probe (default auto, max 120s)
@@ -57,6 +62,10 @@ const usage = `usage: node scripts/render.mjs [options] scene1.html [scene2.html
   -c <mode>      capture: "frames" (deterministic, default) | "screencast" (for <video>/<audio> scenes)
   --browser <path>  Chromium/Chrome executable (default Playwright Chromium)
   --overwrite       replace an existing output file
+  --check-determinism <auto|t,t,...>
+                    no MP4: per scene, compare a fresh seek with the same time reached after
+                    seeking elsewhere (auto = 25/50/75% of the scene); exit 2 on mismatch
+  --report <file.json>  with --check-determinism, write the results as JSON
   --                treat remaining arguments as scene paths`;
 function argumentError(message) {
   console.error(`error: ${message}\n${usage}`);
@@ -89,6 +98,12 @@ for (let i = 0; i < argv.length; i++) {
     if (capture !== 'frames' && capture !== 'screencast') argumentError(`-c expects "frames" or "screencast", got: ${capture}`);
   } else if (a === '--browser') browserPath = resolve(next());
   else if (a === '--overwrite') overwrite = true;
+  else if (a === '--check-determinism') {
+    determinism = next();
+    if (determinism !== 'auto' && !determinism.split(',').every(v => v.trim() && Number.isFinite(Number(v)) && Number(v) >= 0)) {
+      argumentError('--check-determinism expects "auto" or comma-separated non-negative seconds');
+    }
+  } else if (a === '--report') reportPath = resolve(next());
   else if (a === '-h' || a === '--help') { console.log(usage); process.exit(0); }
   else if (a.startsWith('-')) argumentError(`unknown option: ${a}`);
   else scenes.push(resolve(a));
@@ -98,7 +113,9 @@ for (const s of scenes) if (!existsSync(s) || !statSync(s).isFile()) argumentErr
 if (browserPath && (!existsSync(browserPath) || !statSync(browserPath).isFile())) argumentError(`browser is not a file: ${browserPath}`);
 const outAbs = resolve(outPath);
 if (scenes.includes(outAbs)) argumentError('output path must differ from every input scene');
-if (!overwrite && existsSync(outAbs)) argumentError(`output already exists: ${outAbs}; use --overwrite to replace it`);
+if (reportPath && !determinism) argumentError('--report is only used with --check-determinism');
+if (determinism && capture !== 'frames') argumentError('--check-determinism uses frames capture');
+if (!determinism && !overwrite && existsSync(outAbs)) argumentError(`output already exists: ${outAbs}; use --overwrite to replace it`);
 const explicit = duration !== 'auto';
 let explicitSec = 0;
 if (explicit) {
@@ -271,36 +288,57 @@ function startAnimations(page) {
   });
 }
 
+const capTimeout = async (promise) => {
+  let timer;
+  try {
+    return await Promise.race([promise, new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error('frame capture stalled — check renderAt or retry media scenes with -c screencast')), 15000);
+    })]);
+  } finally { clearTimeout(timer); }
+};
+
+// Device metrics belong to a CDP session. A fresh capture session must set
+// its own override: otherwise Chrome can capture at its native window size
+// and restore that size over Playwright's emulated viewport afterward.
+async function prepareCapture(context, page) {
+  const cdp = await context.newCDPSession(page);
+  await cdp.send('Emulation.setDeviceMetricsOverride', {
+    width, height, deviceScaleFactor: 1, mobile: false,
+    screenWidth: width, screenHeight: height,
+  });
+  const assertViewport = async () => {
+    const actual = await page.evaluate(() => ({ width: innerWidth, height: innerHeight, scale: devicePixelRatio }));
+    if (actual.width !== width || actual.height !== height || actual.scale !== 1) {
+      throw new Error(`capture viewport changed: expected ${width}x${height} @ 1x, got ${actual.width}x${actual.height} @ ${actual.scale}x`);
+    }
+  };
+  await assertViewport();
+  return { cdp, assertViewport };
+}
+
+async function seekTo(page, seconds) {
+  await capTimeout(page.evaluate(async seconds => {
+    await window.renderAt(seconds);
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  }, seconds));
+}
+
+async function screenshot(cdp) {
+  const { data } = await capTimeout(cdp.send('Page.captureScreenshot', {
+    format: 'png', fromSurface: true, captureBeyondViewport: false,
+    clip: { x: 0, y: 0, width, height, scale: 1 },
+  }));
+  return Buffer.from(data, 'base64');
+}
+
 // Authored scenes own their state: seek exactly to i/fps and await two paints.
 // Legacy scenes retain Chromium's virtual clock for CSS, GSAP and rAF playback.
 async function renderSceneFrames(browser, htmlPath, mp4Path) {
   const { context, page, totalSec, seekable, assertHealthy } = await openScene(browser, htmlPath);
   let enc;
   let encDone;
-  const capTimeout = async (promise) => {
-    let timer;
-    try {
-      return await Promise.race([promise, new Promise((_, reject) => {
-        timer = setTimeout(() => reject(new Error('frame capture stalled — check renderAt or retry media scenes with -c screencast')), 15000);
-      })]);
-    } finally { clearTimeout(timer); }
-  };
   try {
-    const cdp = await context.newCDPSession(page);
-    // Device metrics belong to a CDP session. A fresh capture session must set
-    // its own override: otherwise Chrome can capture at its native window size
-    // and restore that size over Playwright's emulated viewport afterward.
-    await cdp.send('Emulation.setDeviceMetricsOverride', {
-      width, height, deviceScaleFactor: 1, mobile: false,
-      screenWidth: width, screenHeight: height,
-    });
-    const assertViewport = async () => {
-      const actual = await page.evaluate(() => ({ width: innerWidth, height: innerHeight, scale: devicePixelRatio }));
-      if (actual.width !== width || actual.height !== height || actual.scale !== 1) {
-        throw new Error(`capture viewport changed: expected ${width}x${height} @ 1x, got ${actual.width}x${actual.height} @ ${actual.scale}x`);
-      }
-    };
-    await assertViewport();
+    const { cdp, assertViewport } = await prepareCapture(context, page);
     if (!seekable) {
       await cdp.send('Emulation.setVirtualTimePolicy', { policy: 'pause' });
       await startAnimations(page);
@@ -327,21 +365,13 @@ async function renderSceneFrames(browser, htmlPath, mp4Path) {
 
     const frameBudget = 1000 / fps;
     for (let i = 0; i < nFrames; i++) {
-      if (seekable) {
-        await capTimeout(page.evaluate(async seconds => {
-          await window.renderAt(seconds);
-          await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-        }, i / fps));
-      }
+      if (seekable) await seekTo(page, i / fps);
       assertHealthy();
       await assertViewport();
-      const { data } = await capTimeout(cdp.send('Page.captureScreenshot', {
-        format: 'png', fromSurface: true, captureBeyondViewport: false,
-        clip: { x: 0, y: 0, width, height, scale: 1 },
-      }));
+      const frame = await screenshot(cdp);
       await assertViewport();
       assertHealthy();
-      if (!enc.stdin.write(Buffer.from(data, 'base64'))) {
+      if (!enc.stdin.write(frame)) {
         await capTimeout(Promise.race([
           new Promise(resolve => enc.stdin.once('drain', resolve)),
           encDone.then(() => { throw new Error('ffmpeg ended before all frames were written'); }),
@@ -422,8 +452,96 @@ async function renderSceneScreencast(browser, htmlPath, mp4Path) {
 
 const renderScene = capture === 'screencast' ? renderSceneScreencast : renderSceneFrames;
 
+// ---------- seek determinism (adapted from dashi-animationstyle, MIT) ----------
+// A frame must depend only on t. Compare a fresh page seeked straight to t with
+// the same page after visiting a late time and t/2. DOM rasterization can wobble
+// by a level or two between paints, so tolerate tiny per-channel noise.
+const NOISE_LEVEL = 8;        // per-channel difference treated as raster noise
+const NOISE_SHARE = 0.00005;  // share of pixels allowed beyond it (about 100 at 1080p)
+
+function decodePng(png) {
+  return new Promise((res, rej) => {
+    const p = spawn('ffmpeg', ['-v', 'error', '-f', 'png_pipe', '-i', '-', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], { stdio: ['pipe', 'pipe', 'pipe'] });
+    const chunks = [];
+    let err = '';
+    p.stdout.on('data', c => chunks.push(c));
+    p.stderr.on('data', c => err += c);
+    p.stdin.on('error', () => {});
+    p.on('error', e => rej(e.code === 'ENOENT' ? new Error('ffmpeg not found: brew install ffmpeg') : e));
+    p.on('exit', c => c === 0 ? res(Buffer.concat(chunks)) : rej(new Error(`ffmpeg could not decode a screenshot: ${err.slice(-500)}`)));
+    p.stdin.end(png);
+  });
+}
+
+async function compareFrames(first, second) {
+  if (first.equals(second)) return { match: true, differing_pixels: 0, max_difference: 0 };
+  const [a, b] = await Promise.all([decodePng(first), decodePng(second)]);
+  if (a.length !== b.length) return { match: false, differing_pixels: width * height, max_difference: 255 };
+  let differing = 0, max = 0;
+  for (let i = 0; i < a.length; i += 3) {
+    const d = Math.max(Math.abs(a[i] - b[i]), Math.abs(a[i + 1] - b[i + 1]), Math.abs(a[i + 2] - b[i + 2]));
+    if (d > max) max = d;
+    if (d > NOISE_LEVEL) differing++;
+  }
+  return { match: differing <= Math.floor(width * height * NOISE_SHARE), differing_pixels: differing, max_difference: max };
+}
+
+async function checkSceneDeterminism(browser, htmlPath) {
+  const probe = await openScene(browser, htmlPath);
+  await probe.context.close().catch(() => {});
+  if (!probe.seekable) {
+    return { scene: htmlPath, status: 'skipped', reason: 'no window.renderAt; legacy scenes play on a virtual clock', times: [], comparisons: [] };
+  }
+  const lastFrame = Math.max(0, Math.round(probe.totalSec * fps) - 1);
+  const snap = seconds => Number((Math.min(lastFrame, Math.max(0, Math.round(seconds * fps))) / fps).toFixed(6));
+  const times = determinism === 'auto' ? [0.25, 0.5, 0.75].map(k => snap(probe.totalSec * k)) : determinism.split(',').map(v => snap(Number(v)));
+  const far = snap(probe.totalSec * 0.95);
+  const comparisons = [];
+  for (const t of times) {
+    const { context, page, assertHealthy } = await openScene(browser, htmlPath);
+    try {
+      const { cdp } = await prepareCapture(context, page);
+      await seekTo(page, t);
+      const fresh = await screenshot(cdp);
+      const via = [far, snap(t / 2)];
+      for (const stop of via) await seekTo(page, stop);
+      await seekTo(page, t);
+      const revisited = await screenshot(cdp);
+      assertHealthy();
+      comparisons.push({ seconds: t, via, ...await compareFrames(fresh, revisited) });
+    } finally {
+      await context.close().catch(() => {});
+    }
+  }
+  return { scene: htmlPath, status: comparisons.every(c => c.match) ? 'pass' : 'fail', times, comparisons };
+}
+
+async function runDeterminism(browser) {
+  const results = [];
+  for (const scene of scenes) {
+    const result = await checkSceneDeterminism(browser, scene);
+    results.push(result);
+    if (result.status === 'skipped') console.log(`- ${scene}: skipped (${result.reason})`);
+    for (const c of result.comparisons) {
+      console.log(`${c.match ? '✓' : '✗'} ${scene} @ ${c.seconds}s: fresh seek vs after ${c.via.join('s, ')}s — ` +
+        (c.match ? 'same' : `${c.differing_pixels} pixels differ (max ${c.max_difference}/255)`));
+    }
+  }
+  const status = results.some(r => r.status === 'fail') ? 'fail' : results.every(r => r.status === 'skipped') ? 'skipped' : 'pass';
+  const report = { status, tolerance: { level: NOISE_LEVEL, share: NOISE_SHARE }, width, height, fps, scenes: results };
+  if (reportPath) {
+    await mkdir(dirname(reportPath), { recursive: true });
+    await writeFile(reportPath, JSON.stringify(report, null, 2) + '\n');
+  }
+  if (status === 'fail') {
+    console.error('error: a frame depends on seek order. Reset every animated property, canvas state ' +
+      '(lineDash, globalAlpha, transforms) and seeded randomness inside renderAt(t), then check again.');
+    process.exitCode = 2;
+  }
+}
+
 // ---------- main ----------
-await mkdir(dirname(outAbs), { recursive: true });
+if (!determinism) await mkdir(dirname(outAbs), { recursive: true });
 // Render into a unique directory, then publish only a completed MP4. COPYFILE_EXCL
 // also protects against another process creating the destination during capture.
 const workDir = await mkdtemp(join(tmpdir(), 'av-render-'));
@@ -448,7 +566,9 @@ try {
   });
   const resultPath = join(workDir, 'result.mp4');
   let total = 0;
-  if (scenes.length === 1) {
+  if (determinism) {
+    await runDeterminism(browser);
+  } else if (scenes.length === 1) {
     total = await renderScene(browser, scenes[0], resultPath);
   } else {
     const parts = [];
@@ -462,8 +582,10 @@ try {
     await writeFile(listPath, parts.map(path => `file '${path}'`).join('\n'));
     await ffmpeg(['-y', '-f', 'concat', '-safe', '0', '-i', listPath, '-c', 'copy', resultPath]);
   }
-  await copyFile(resultPath, outAbs, overwrite ? 0 : constants.COPYFILE_EXCL);
-  console.log(`MP4: ${outAbs} (${scenes.length > 1 ? `${scenes.length} scenes, ` : ''}${total.toFixed(3)}s)`);
+  if (!determinism) {
+    await copyFile(resultPath, outAbs, overwrite ? 0 : constants.COPYFILE_EXCL);
+    console.log(`MP4: ${outAbs} (${scenes.length > 1 ? `${scenes.length} scenes, ` : ''}${total.toFixed(3)}s)`);
+  }
 } catch (error) {
   console.error(`error: ${error.message}`);
   process.exitCode = 1;
