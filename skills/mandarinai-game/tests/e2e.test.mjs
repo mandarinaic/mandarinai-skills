@@ -1,6 +1,6 @@
 // End to end: scaffold -> serve -> full story loop -> pack -> full loop again from file://.
 // Needs the source cast models (MANDARINAI_CAST_3D or ~/Downloads/3D/final); skips without them.
-// Run from the skill root: node --test tests/
+// Run from the skill root: node --test tests/*.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -40,6 +40,10 @@ test('starter plays start to finish in dev and as a packed single file', { skip:
   try {
     await new Promise((r) => setTimeout(r, 600));
     expectFullLoop(result(node(['scripts/play-check.mjs', `http://localhost:${port}/?mute`, '--script', STEPS])));
+    const demo = JSON.parse((s => s.slice(s.indexOf('{'), s.lastIndexOf('}') + 1))(node(['scripts/play-check.mjs', `http://localhost:${port}/?mute`, '--demo'])));
+    assert.equal(demo.demo.finished, true, 'the starter demo should play itself to the end');
+    assert.equal(demo.state.mode, 'end');
+    assert.equal(demo.state.words.length, 3);
   } finally { server.kill(); }
 
   node(['scripts/build-single-html.mjs', game, '--name', 'zodiac']);

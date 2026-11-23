@@ -89,7 +89,7 @@ lists apart in your report: **verified** (seen, heard, or measured), **runs with
 ```bash
 cd SKILL_ROOT && npm install                      # once; three.js, gltf-transform, esbuild, sharp, playwright
 node scripts/new-game.mjs --out /abs/output/games/<slug> --cast rat,ox
-node /abs/output/games/<slug>/serve.mjs           # http://localhost:5173/?auto  (?show=cast, ?mute, ?god)
+node /abs/output/games/<slug>/serve.mjs           # http://localhost:5173/?auto  (?demo, ?show=cast, ?mute, ?god)
 ```
 
 The starter (`assets/starter/`) is a complete small game — 十二生肖 race with Rui and Bo, a
@@ -104,6 +104,8 @@ from an empty file.
 | `scripts/play-check.mjs` | headless run through the `G` hooks: screenshot, state JSON, fails on page errors or any network request a shipped game should not make |
 | `scripts/build-single-html.mjs` | shrink assets, bundle, inline everything → `dist/<slug>.html` + `dist/site/` |
 | `assets/starter/src/input.js` | key state that survives lost key-ups, F3 debug panel. Use it; do not rewrite input |
+| `assets/starter/src/loop.js` | fixed 60 Hz logic step; a stall drops the backlog instead of taking one huge step |
+| `assets/starter/src/autoplay.js` | scripted input queue (hold / press / wait / walk-to) refilled by a game `plan()`: the `?demo` run |
 
 ## Working rules
 
@@ -143,17 +145,24 @@ Read on demand:
 Background tabs run no `requestAnimationFrame`, so the game exposes hooks on `window.G`:
 `G.step(n)` (logic + render, slow), `G.upd(n)` (logic only, use for long runs), `G.press(code)`,
 `G.hold(code, on)`, `G.teleport(x, z)`, `G.advance()` (dialogue), `G.start()`, `G.state()`,
-`G.errors`. URL switches: `?auto` skip title, `?mute`, `?show=cast` lineup, `?god`.
+`G.errors`, `G.demo` (`.start()`, `.stop()`, `.running`). URL switches: `?auto` skip title,
+`?demo` the game plays itself (any real key or tap takes over), `?mute`, `?show=cast` lineup, `?god`.
 
 ```bash
 node scripts/play-check.mjs "http://localhost:5173/?mute" --shot /abs/shot.png --script /abs/steps.js
 ```
 
-`steps.js` is a function body with `G` in scope; return what you want printed.
+`steps.js` is a function body with `G` in scope; return what you want printed. `--demo` runs
+`G.demo` to its end first and fails if it never finishes. When the story changes, rewrite
+`demoPlan()` in `main.js` as the new route (read game state only); a finished demo is the
+cheapest whole-story regression, and a live `?demo` run is ready-made trailer footage.
 `tests/full-loop.steps.js` is a worked example that plays the starter start to finish.
 Skill regression (scaffold, play, pack, replay packed): `node --test tests/*.test.mjs`. Rules:
 
 - **Numbers decide, screenshots support.** A frame-stepped screenshot can be stale; state is not.
+- Logic runs in **fixed 1/60 s steps** (`src/loop.js`); animate from the game clock `clock`,
+  never `performance.now()` or `Date.now()`, or stepped runs and the demo stop repeating.
+- Honour `prefers-reduced-motion`: non-essential motion (title orbit, pops, shakes) holds still.
 - Keep every game flow **synchronous in game time**: dialogue completion, delays, and toasts
   advance with `dt`, never `setTimeout` or Promise chains — microtasks do not run between
   `G.step()` calls, and a promise-driven flow stalls every scripted test.

@@ -38,6 +38,7 @@
   .toast { display: flex; flex-direction: column; align-items: center; background: rgba(251,248,241,.95); border: 2px solid var(--gold); border-radius: 14px; padding: 10px 26px; animation: pop .35s cubic-bezier(.2,1.6,.4,1); }
   .toast b { font-size: 46px; color: var(--blue); line-height: 1.1; } .toast i { font-style: normal; color: var(--blue); } .toast span { font-size: 13px; color: #5a6275; }
   @keyframes pop { from { transform: scale(.6); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
   #end { background: rgba(251,248,241,.94); }
   #end h2 { font-family: var(--serif); font-size: 64px; color: var(--blue); letter-spacing: .2em; margin: 0 0 6px; }
   #end ul { list-style: none; padding: 0; display: flex; gap: 14px; margin: 26px 0; }

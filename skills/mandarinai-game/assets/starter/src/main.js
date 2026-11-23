@@ -1,12 +1,15 @@
 // MandarinAi game starter: one scene, a playable cast member, an NPC, a scripted
 // cutscene, collectible words, and the debug hooks every later stage relies on.
-// URL switches: ?auto (skip title)  ?mute  ?show=cast (character lineup)  ?god (no gate lock)
+// URL switches: ?auto (skip title)  ?demo (plays itself; any key or tap takes over)  ?mute
+//               ?show=cast (character lineup)  ?god (no gate lock)
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { keys, pressed, endFrame, debugPanel } from './input.js';
 import { makeActor, animate, face, squash, flash, jump } from './motion.js';
 import { createDialogue } from './dialogue.js';
 import { story } from './story.js';
+import { createFixedStep } from './loop.js';
+import { createAutoplay } from './autoplay.js';
 
 const Q = new URLSearchParams(location.search);
 const G = (window.G = { errors: [], ready: false });
@@ -14,6 +17,8 @@ addEventListener('error', (e) => G.errors.push(String(e.message)));
 addEventListener('unhandledrejection', (e) => G.errors.push(String(e.reason?.message || e.reason)));
 const $ = (s) => document.querySelector(s);
 const W = story.world;
+// Reduced motion: the title camera holds still and toasts appear without the pop.
+const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // ---------- renderer, camera, light
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -144,6 +149,7 @@ const objective = (zh, en) => { $('#objective').innerHTML = `<b>${zh}</b><span>$
 
 // ---------- game state
 let mode = 'loading', player, ferry, crossed = false, cut = null, gateNag = false;
+let clock = 0;   // game seconds; animate from this, never performance.now(), so stepped runs repeat exactly
 const collected = [], wordMeshes = [], tmp = new THREE.Vector3();
 const focus = new THREE.Vector3(), tapTarget = { on: false, x: 0, z: 0 };
 const dist2 = (a, x, z) => Math.hypot(a.root.position.x - x, a.root.position.z - z);
@@ -215,8 +221,7 @@ function updatePlayer(dt) {
 }
 
 function updateWorld(dt) {
-  const t = performance.now() / 1000;
-  for (const s of wordMeshes) if (s.visible) s.position.y = 1 + Math.sin(t * 2 + s.position.x) * 0.12;
+  for (const s of wordMeshes) if (s.visible) s.position.y = 1 + Math.sin(clock * 2 + s.position.x) * 0.12;
   const act = pressed.has('Space') || pressed.has('KeyE') || pressed.has('Tap');
   if (!crossed && dist2(player, ferry.root.position.x, ferry.root.position.z) < 2.2) {
     face(ferry, player.root.position.x - ferry.root.position.x, player.root.position.z - ferry.root.position.z, dt, 4);
@@ -267,7 +272,7 @@ function finish() {
 
 function updateCamera(dt) {
   if (mode === 'title') {
-    const t = performance.now() / 6000; camera.position.set(Math.sin(t) * 16, 9, Math.cos(t) * 16 - 2); camera.lookAt(0, 0, -2); return;
+    const t = calm ? 0 : clock / 6; camera.position.set(Math.sin(t) * 16, 9, Math.cos(t) * 16 - 2); camera.lookAt(0, 0, -2); return;
   }
   // leash: the focus trails the player but never more than 3 m away
   const p = player.root.position; focus.lerp(p, 1 - Math.exp(-dt * 6));
@@ -278,6 +283,8 @@ function updateCamera(dt) {
 }
 
 function frame(dt, draw = true) {
+  clock += dt;
+  if (demo.running) demo.tick();
   if (mode === 'lineup') {
     for (const a of G.lineup) { if (G.lineupSpin) a.root.rotation.y += dt * 0.6; animate(a, dt);
       tmp.copy(a.root.position).setY(-0.15).project(camera); a.tag.style.transform = `translate(${(tmp.x + 1) * innerWidth / 2}px,${(1 - tmp.y) * innerHeight / 2}px) translate(-50%,0)`; }
@@ -285,13 +292,30 @@ function frame(dt, draw = true) {
     if (mode === 'play') { updatePlayer(dt); updateWorld(dt); } else if (mode === 'cut') updateCut(dt);
     if (mode === 'talk') { pressed.clear(); }
     animate(player, dt); animate(ferry, dt);
-    if (G.water) G.water.material.color.setHSL(0.58, 0.5, 0.47 + Math.sin(performance.now() / 700) * 0.015);
+    if (G.water) G.water.material.color.setHSL(0.58, 0.5, 0.47 + Math.sin(clock / 0.7) * 0.015);
     ageToasts(dt);
     updateCamera(dt);
   }
   if (draw) { renderer.render(scene, camera); panel(); }
   endFrame();
 }
+
+// ---------- autoplay (?demo): the starter plays its own story. Replace demoPlan with the
+// adapted story's route; keep it reading only game state so it stays repeatable.
+const READ = 150;   // steps a line stays up in the demo (2.5 s) so a viewer can read it
+const notPlaying = () => mode !== 'play';
+function demoPlan() {
+  if (mode === 'title') return [{ wait: 60, then: start }];
+  if (mode === 'talk') return [{ wait: READ, until: () => !dialogue.open, then: () => dialogue.open && dialogue.advance() }];
+  if (mode === 'cut') return [{ wait: 30 }];
+  if (mode !== 'play') return null;   // end screen: the run is over
+  if (!crossed) return [{ to: [ferry.root.position.x, ferry.root.position.z + 1.7], until: notPlaying }, { press: ['KeyE'] }];
+  const next = wordMeshes.find((s) => s.visible);
+  return [{ to: next ? [next.position.x, next.position.z] : [W.gate[0], W.gate[1] + 1], until: notPlaying }];
+}
+const demo = createAutoplay({ keys, pressed, pos: () => [player.root.position.x, player.root.position.z], plan: demoPlan });
+// a real key or tap ends the demo and hands the game over where it stands
+for (const ev of ['keydown', 'pointerdown']) addEventListener(ev, (e) => { if (e.isTrusted && demo.running) demo.stop(); }, true);
 
 // ---------- debug hooks (tabs in the background do not run rAF: drive frames by hand)
 const panel = debugPanel(() => player ? `mode ${mode}  pos ${player.root.position.x.toFixed(2)},${player.root.position.z.toFixed(2)}  speed ${player.speed.toFixed(2)}\ncrossed ${crossed}  words ${collected.length}/${story.words.length}  errors ${G.errors.length}` : `mode ${mode}`);
@@ -303,8 +327,9 @@ Object.assign(G, {
   hold: (code, on = true) => (on ? keys.add(code) : keys.delete(code)),
   teleport: (x, z) => { player.root.position.set(x, 0, z); focus.copy(player.root.position); },
   advance: () => dialogue.advance(),
+  demo,   // G.demo.start() / .stop() / .running: the ?demo autoplay
   start: () => start(),
-  state: () => ({ mode, crossed, words: collected.map((w) => w.zh), pos: player ? [+player.root.position.x.toFixed(2), +player.root.position.z.toFixed(2)] : null, dialogue: dialogue.open, errors: [...G.errors] }),
+  state: () => ({ mode, crossed, words: collected.map((w) => w.zh), pos: player ? [+player.root.position.x.toFixed(2), +player.root.position.z.toFixed(2)] : null, dialogue: dialogue.open, demo: demo.running, errors: [...G.errors] }),
 });
 
 // tap / click on the ground to walk there; tap the ferry to talk
@@ -325,8 +350,15 @@ function start() {
 addEventListener('keydown', (e) => { if ((e.code === 'Space' || e.code === 'Enter') && mode === 'title') { e.preventDefault(); e.stopImmediatePropagation(); start(); } }, true);
 $('#start').addEventListener('click', start);
 
+// Fixed 60 Hz logic, one render per display frame that advanced (src/loop.js).
+const fixed = createFixedStep();
 let last = performance.now();
-function loop(now) { const dt = Math.min((now - last) / 1000, 0.05); last = now; frame(dt); requestAnimationFrame(loop); }
+function loop(now) {
+  const n = fixed.advance((now - last) / 1000); last = now;
+  for (let i = 0; i < n; i++) frame(fixed.dt, false);
+  if (n) { renderer.render(scene, camera); panel(); }
+  requestAnimationFrame(loop);
+}
 
 // ---------- boot
 document.title = `${story.title.zh} · ${story.title.en} | MandarinAi`;
@@ -337,6 +369,7 @@ loadCast().then((cast) => {
     setupPlay(cast); ferry.height = (cast[story.cast.ferry]?.meta.height ?? 1.1) * (story.scale?.ferry ?? 1);
     mode = 'title'; $('#start').hidden = false; $('#loading').hidden = true;
     if (Q.has('auto')) start();
+    if (Q.has('demo')) demo.start();
   }
   G.ready = true; requestAnimationFrame(loop);
 }).catch((e) => { G.errors.push(e.message); $('#loading').textContent = e.message; console.error(e); });

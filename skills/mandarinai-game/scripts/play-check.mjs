@@ -4,10 +4,12 @@
 // pushed by G.step(): read state numbers first, treat screenshots as supporting evidence.
 //
 // Usage:
-//   node scripts/play-check.mjs <url> --shot out.png [--script steps.js] [--size 1280x800]
+//   node scripts/play-check.mjs <url> --shot out.png [--script steps.js] [--size 1280x800] [--demo [frames]]
 // steps.js is evaluated in the page after G.ready, as the body of an async function
 // with G in scope, e.g.  G.start(); G.step(30); G.advance(); G.hold('KeyW'); G.step(120);
 // Its return value is printed as JSON. A file:// URL works too (single-HTML builds).
+// --demo runs the game's own autoplay (G.demo) to its end before the script, logic-only,
+// and fails if it has not finished within the frame budget (default 36000 = 10 game minutes).
 import fs from 'node:fs';
 import { chromium } from 'playwright';
 
@@ -18,6 +20,8 @@ if (!url || url.startsWith('--')) { console.error('usage: play-check.mjs <url> -
 const [w, h] = opt('--size', '1280x800').split('x').map(Number);
 const shot = opt('--shot');
 const script = opt('--script') ? fs.readFileSync(opt('--script'), 'utf8') : '';
+const demoAt = args.indexOf('--demo');
+const demoBudget = demoAt < 0 ? 0 : Number(/^\d+$/.test(args[demoAt + 1] || '') ? args[demoAt + 1] : 36000);
 
 // --disable-gpu: macOS denies Playwright's libEGL and a dying GPU process kills the page;
 // SwiftShader gives WebGL a deterministic software path instead.
@@ -41,11 +45,19 @@ page.on('request', (r) => {
 try {
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForFunction(() => window.G && (window.G.ready || window.G.errors.length), null, { timeout: 60000 });
-  const result = await page.evaluate(async (body) => {
+  const result = await page.evaluate(async ({ body, demoBudget }) => {
     const G = window.G; G.step?.(2);
+    let demo = null;
+    if (demoBudget) {
+      if (!G.demo) throw new Error('--demo: this page has no G.demo autoplay (see the starter src/autoplay.js)');
+      G.demo.start(); let frames = 0;
+      while (G.demo.running && frames < demoBudget) { G.upd(60); frames += 60; }
+      demo = { frames, finished: !G.demo.running };
+      G.step(1);
+    }
     const r = await new Function('G', `return (async () => { ${body} })()`)(G);
-    return { result: r ?? null, state: G.state?.() ?? null, errors: G.errors };
-  }, script);
+    return { result: r ?? null, demo, state: G.state?.() ?? null, errors: G.errors };
+  }, { body: script, demoBudget });
   if (shot) await page.screenshot({ path: shot, timeout: 20000 }).catch(async () => {
     // screenshot() waits on fonts internally; fall back to raw CDP capture
     const cdp = await page.context().newCDPSession(page);
@@ -54,6 +66,7 @@ try {
   });
   console.log(JSON.stringify(result, null, 2));
   if (external.length) problems.push(`external requests (a shipped game must make none): ${[...new Set(external)].join(', ')}`);
+  if (result.demo && !result.demo.finished) problems.push(`demo still running after ${result.demo.frames} frames: its plan() never reaches an end`);
   if (result.errors?.length) problems.push(...result.errors.map((e) => `G.errors: ${e}`));
 } catch (e) {
   problems.push(`check failed: ${e.message}`);
