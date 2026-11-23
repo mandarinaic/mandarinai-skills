@@ -1,9 +1,9 @@
 ---
 name: mandarinai-game
-description: "Build a browser 3D game adapted from a Chinese story, fable, idiom tale, classic novel episode, or book (西游记, 十二生肖, 成语故事, 寓言, 三国, 聊斋, a user-supplied book), cast with the MandarinAi characters wherever one fits a role, with an optional Mandarin learning layer (pinyin dialogue, collectible words), shipped as one offline HTML file. Use when the user wants to 做游戏、做一个小游戏、把故事做成游戏、网页游戏、3D 游戏、互动故事、闯关游戏、动作游戏、Boss 战, or mentions three.js / WebGL games, 打击感, 单文件 HTML 游戏, or turning a story or book into something playable. Not for videos (mandarinai-video / mandarinai-story-video) or static cards."
+description: "Build MandarinAi browser story games or interactive Mandarin learning missions. Use for playable Chinese stories, textbook-to-game adaptations, situation-based dialogue games, or 3D browser games. Learning-first requests use validated lesson objectives and quizzes before scene production; standalone story games can retain pinyin dialogue and word collectibles. Supports Swan integration or an explicitly selected offline HTML build. Lesson authoring alone uses mandarinai-lesson; video output uses mandarinai-video or mandarinai-story-video."
 license: AGPL-3.0
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 # MandarinAi game
@@ -22,6 +22,20 @@ The workflow below is built so every stage is seen, heard, or measured before mo
 
 `SKILL_ROOT` is the directory containing this file. Run scripts from there after
 `npm install` (one time). Game projects live outside the skill, e.g. `./output/games/<slug>/`.
+
+## Choose the route
+
+- **Learning mission, textbook, or assessed quiz:** use `mandarinai-lesson` to author and
+  validate the content first, then read [assessment-games.md](references/assessment-games.md).
+  Choose a small scene that requires the target language decision. 2D/DOM is appropriate;
+  3D, combat, and paid asset generation are optional production choices. The lesson preview
+  is a local prototype, not a published Swan activity or an account-mastery service.
+- **Story game:** continue with the story workflow below. Dialogue exposure and word
+  pickups are useful practice; they do not establish recall or pronunciation mastery.
+- **Inside Swan:** preserve Nuxt routing, the activity registry, session ownership, shared
+  timer/tween/results, i18n, and CDN delivery. Do not run the offline scaffold over Swan or
+  import its global input handlers. The single-file/no-network rules below apply to the
+  standalone story build only.
 
 ## Step 0 · Agree on five things before writing code
 
@@ -48,7 +62,8 @@ Ask only what the request leaves open; skip what is already answered.
    once; do not insist on primitives. Quote before spending, report spend after.
 
 Write the answers, the beat list, the casting table, and a staged plan into `PLAN.md` in
-the game folder and get a yes before Stage 1. "Research first" from a user is meant
+the game folder. Continue within the user's authorized scope; the plan is a reviewable
+deliverable, not an automatic confirmation stop. "Research first" from a user is meant
 literally: if they give a reference game or video, study it and write down camera, pacing,
 and UI observations in that file.
 
@@ -56,7 +71,7 @@ and UI observations in that file.
 
 | Stage | Output | How it is checked |
 |---|---|---|
-| 0 Plan | PLAN.md: beats, form, casting, learning layer, stages | user says yes |
+| 0 Plan | PLAN.md: beats, form, casting, learning layer, stages | inspect against the brief |
 | 1 Scaffold | `new-game.mjs` project running, cast lineup page | `?show=cast` screenshot |
 | 2 World | ground, sky, light, props for each scene | still screenshots before motion |
 | 3 Cast in motion | hero controller, NPCs, procedural motion or rigged clips | close-up screenshots + state numbers |

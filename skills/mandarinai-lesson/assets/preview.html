@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MandarinAi · Lesson preview</title>
+<style>
+:root{color-scheme:light;--blue:#1b46a2;--ink:#172344;--muted:#4e5f7c;--line:#d8e0ec;--paper:#fff;--bg:#edf2fa}
+*{box-sizing:border-box}body{margin:0;color:var(--ink);background:var(--bg);font:17px/1.6 system-ui,-apple-system,sans-serif}main{max-width:1000px;margin:auto;padding:24px}header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px}.brand{font-size:24px;font-weight:800;color:var(--blue)}.tag{font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:4px 12px}.card{background:var(--paper);padding:clamp(20px,4vw,40px);border:1px solid var(--line);border-radius:20px;box-shadow:0 12px 30px #19345e08}h1{font-size:clamp(27px,5vw,40px);line-height:1.2;margin:8px 0 16px}h2{font-size:24px;line-height:1.4;margin:10px 0 20px}h3{font-size:19px;margin:12px 0}p{margin:10px 0 16px}.muted{color:var(--muted)}.eyebrow{font-size:13px;letter-spacing:.07em;text-transform:uppercase;color:var(--blue);font-weight:750}.zh{font-family:"PingFang SC","Microsoft YaHei",sans-serif;font-size:24px}.small{font-size:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.turn,.word{border-bottom:1px solid var(--line);padding:12px 0}.word{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline}.word .zh{min-width:55px}.buttons,.chunks{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}button{font:inherit;color:var(--ink);background:#fff;border:1px solid #9cabc3;border-radius:10px;padding:11px 18px;cursor:pointer;min-height:46px}button:hover{background:#f0f4fb}button:disabled{opacity:.55;cursor:default}.primary{color:white;background:var(--blue);border-color:var(--blue)}.primary:hover{background:#14377f}button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid #9c6410;outline-offset:3px}.choices{display:grid;gap:12px}.choices button{text-align:left;width:100%}.choices button[aria-pressed="true"]{border:2px solid var(--blue);background:#eaf0ff;padding:10px 17px}.answer-line{min-height:70px;background:#f4f7fc;border:1px dashed #a2b0c8;padding:14px;border-radius:12px;margin:16px 0}.feedback{border-radius:12px;padding:16px;margin-top:20px;background:#fff7df;border:1px solid #e7c775}.feedback.good{background:#eaf6ef;border-color:#83b299}input{display:block;width:100%;border:1px solid #8e9fb9;border-radius:10px;padding:14px;font:24px "PingFang SC",sans-serif;color:var(--ink);margin:10px 0}progress{width:100%;height:10px;accent-color:var(--blue);display:block;margin:14px 0 24px}summary{cursor:pointer;font-weight:650;margin:10px 0}details{margin:24px 0}.notice{padding:14px;border-left:4px solid #d29422;background:#fff8e8;font-size:14px;margin-top:20px}.result-row{padding:18px 0;border-bottom:1px solid var(--line)}[hidden]{display:none!important}footer{padding:20px 0;color:var(--muted);font-size:13px}ul{padding-left:24px}.question-meta{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.hint{color:#665015;background:#fff5d4;padding:12px;border-radius:10px;margin-top:12px}@media(max-width:650px){main{padding:16px}.grid{grid-template-columns:1fr}header{align-items:flex-start}.tag{max-width:170px}.buttons button{flex:1 1 130px}.card{border-radius:14px}h2{font-size:22px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<main>
+  <header><div class="brand">MandarinAi</div><span class="tag">Local lesson prototype · English UI</span></header>
+  <section id="intro" class="card" aria-labelledby="lesson-title">
+    <div class="eyebrow">Learn → try → use → check</div>
+    <h1 id="lesson-title"></h1><p id="lesson-subtitle" class="zh" lang="zh-CN"></p>
+    <p id="lesson-intro">Explore the model, try the pattern, use it in a situation, then check your understanding with new prompts.</p>
+    <ul id="objectives"></ul><p id="prerequisites" class="small muted"></p>
+    <details open><summary>Meet the words and pattern</summary><div class="grid"><div id="words"></div><div id="patterns"></div></div></details>
+    <details open><summary>Model exchange · reading practice</summary><label class="small"><input id="pinyin-toggle" type="checkbox" checked style="display:inline;width:auto;margin-right:8px">Show pinyin</label><div id="dialogue"></div></details>
+    <div class="notice">Draft original teaching content. No audio assessment, published course, account XP, or retention claim. This preview saves attempts on this browser when storage is available.</div>
+    <div class="buttons"><button id="start" class="primary">Start the lesson</button><button id="fresh">Start a new run</button></div>
+  </section>
+  <section id="quiz" class="card" hidden aria-labelledby="question-title">
+    <div class="question-meta"><span id="phase" class="eyebrow"></span><span id="count" class="small muted"></span></div>
+    <progress id="progress" max="9" value="0" aria-label="Lesson progress"></progress>
+    <h2 id="question-title" tabindex="-1"></h2><p id="instruction" class="small muted"></p>
+    <div id="response"></div><div id="hint-text" class="hint" hidden></div>
+    <div class="buttons"><button id="check" class="primary">Check answer</button><button id="hint">Show hint</button><button id="reveal">Reveal answer</button><button id="skip">Skip</button></div>
+    <div id="feedback" role="status" aria-live="polite" class="feedback" hidden></div>
+    <div class="buttons"><button id="next" class="primary" hidden>Continue</button><button id="restart">Restart lesson</button></div>
+  </section>
+  <section id="results" class="card" hidden aria-labelledby="result-title">
+    <div class="eyebrow">Your learning evidence</div><h1 id="result-title" tabindex="-1">Lesson complete</h1>
+    <p>These results describe this run. Retention needs a later check with different prompts.</p><div id="objective-results"></div>
+    <p id="review-plan" class="notice"></p>
+    <div class="buttons"><button id="export" class="primary">Export attempt evidence</button><button id="again">Try a new run</button></div>
+    <details><summary>Inspect saved evidence</summary><pre id="evidence" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px"></pre></details>
+  </section>
+  <p id="storage-status" class="small muted" role="status"></p>
+  <footer>Learn Chinese the Smart Way · Untimed, keyboard and touch accessible. Source mapping and editorial status travel with the lesson package.</footer>
+</main>
+<script id="lesson-data" type="application/json">__LESSON_JSON__</script>
+<script>
+'use strict';
+const lesson=JSON.parse(document.getElementById('lesson-data').textContent);
+const $=id=>document.getElementById(id), text=value=>value.en;
+const byId=new Map(lesson.questions.map(q=>[q.id,q]));
+const sequence=lesson.flow.flatMap(step=>step.question_ids.map(id=>byId.get(id)));
+const saveKey=`mandarinai:lesson:${lesson.id}:${lesson.version}`;
+const uuid=()=>globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`;
+const empty=()=>({lesson_id:lesson.id,content_version:lesson.version,run_id:uuid(),index:0,attempts:[],support:{}});
+let state=empty(), currentResponse=null;
+function el(tag,content,parent,cls){const n=document.createElement(tag);if(content!==undefined)n.textContent=content;if(cls)n.className=cls;if(parent)parent.append(n);return n}
+function save(){try{localStorage.setItem(saveKey,JSON.stringify(state));$('storage-status').textContent='Saved on this browser. Export evidence before starting a new run if you want to keep it.'}catch{$('storage-status').textContent='Browser storage is unavailable. This run still works; export evidence before leaving.'}}
+try{const raw=JSON.parse(localStorage.getItem(saveKey));if(raw&&raw.lesson_id===lesson.id&&raw.content_version===lesson.version&&Number.isInteger(raw.index)&&raw.index>=0&&raw.index<=sequence.length&&Array.isArray(raw.attempts)&&raw.support&&typeof raw.support==='object')state=raw}catch{}
+function show(id){for(const name of ['intro','quiz','results'])$(name).hidden=name!==id}
+function norm(value,policy){if(policy.nfkc)value=value.normalize('NFKC');let ignored=policy.ignore_punctuation;if(policy.nfkc)ignored=ignored.normalize('NFKC');return [...value].filter(c=>!ignored.includes(c)&&!(policy.ignore_whitespace&&/\s/u.test(c))).join('')}
+function support(q){return state.support[q.id]||(state.support[q.id]={hint_used:false,revealed:false})}
+function qAttempts(q){return state.attempts.filter(a=>a.question_id===q.id)}
+function answerLabel(q){if(q.type==='choice')return q.options.find(o=>o.id===q.answer.option_id).text;if(q.type==='order')return q.answer.chunk_ids.map(id=>q.chunks.find(c=>c.id===id).text).join('');return q.answer.accepted[0]}
+function answerCorrect(q,response){if(q.type==='choice')return response===q.answer.option_id;if(q.type==='order')return JSON.stringify(response)===JSON.stringify(q.answer.chunk_ids);return q.answer.accepted.some(a=>norm(a,q.answer.normalization)===norm(response,q.answer.normalization))}
+function record(q,response,correct,skipped=false){const help=support(q);state.attempts.push({attempt_id:uuid(),run_id:state.run_id,lesson_id:lesson.id,content_version:lesson.version,question_id:q.id,objective_ids:q.objective_ids,phase:q.phase,skill:q.skill,attempt_number:qAttempts(q).length+1,response,correct,hint_used:help.hint_used,revealed:help.revealed,skipped,latency_ms:Math.max(0,Math.round(performance.now()-startedAt)),recorded_at:new Date().toISOString()});save()}
+function feedback(message,good=false){$('feedback').hidden=false;$('feedback').className=`feedback${good?' good':''}`;$('feedback').textContent=message}
+let startedAt=performance.now();
+function renderQuestion(){
+ if(state.index===sequence.length){renderResults();return}show('quiz');const q=sequence[state.index],help=support(q);startedAt=performance.now();currentResponse=q.type==='order'?[]:null;
+ $('phase').textContent=lesson.flow.find(s=>s.phase===q.phase).title.en;
+ $('count').textContent=`${state.index+1} of ${sequence.length} · ${q.phase==='exit'?'New prompt · independent check':'Guided practice'}`;
+ $('progress').max=sequence.length;$('progress').value=state.index;
+ $('question-title').textContent=text(q.prompt);$('response').replaceChildren();$('feedback').hidden=true;$('next').hidden=true;$('check').disabled=false;$('skip').disabled=false;
+ $('hint-text').hidden=!help.hint_used;$('hint-text').textContent=text(q.hint);
+ $('instruction').textContent=q.type==='choice'?'Choose one reply.':q.type==='order'?'Tap the chunks in order. Remove the last one to change your answer.':'Type in Chinese. Punctuation and whitespace follow this question’s declared normalization rule.';
+ if(q.type==='choice'){
+  const wrap=el('div',undefined,$('response'),'choices');
+  // Fixed display order keeps review reproducible; answer keys remain stable IDs.
+  for(const option of q.options){const b=el('button',option.text,wrap);b.type='button';b.setAttribute('aria-pressed','false');b.onclick=()=>{currentResponse=option.id;for(const other of wrap.children)other.setAttribute('aria-pressed',String(other===b))}}
+ }else if(q.type==='order'){
+  const line=el('div','Your sentence appears here.',$('response'),'answer-line zh');line.lang='zh-CN';line.setAttribute('aria-live','polite');
+  const chunks=el('div',undefined,$('response'),'chunks');const buttons=new Map();
+  const update=()=>{line.textContent=currentResponse.length?currentResponse.map(id=>q.chunks.find(c=>c.id===id).text).join(''):'Your sentence appears here.';for(const [id,b]of buttons)b.disabled=currentResponse.includes(id)};
+  const order=[...q.chunks].reverse();if(JSON.stringify(order.map(c=>c.id))===JSON.stringify(q.answer.chunk_ids))order.push(order.shift());
+  for(const chunk of order){const b=el('button',chunk.text,chunks,'zh');buttons.set(chunk.id,b);b.onclick=()=>{currentResponse.push(chunk.id);update()}}
+  const undo=el('button','Remove last chunk',$('response'));undo.onclick=()=>{currentResponse.pop();update()};
+ }else{const label=el('label','Your reply',$('response'));label.htmlFor='typed-answer';const input=el('input',undefined,$('response'));input.id='typed-answer';input.lang='zh-CN';input.autocomplete='off';input.oninput=()=>{currentResponse=input.value};input.onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229&&!$('check').disabled)$('check').click()}}
+ const previous=qAttempts(q),last=previous.at(-1);if(last){feedback(last.correct===true?text(q.feedback.correct):`${text(q.feedback.incorrect)} You can try again or continue.`,last.correct===true);$('next').hidden=false;$('check').disabled=last.correct===true;$('skip').disabled=last.correct===true}
+ if(help.revealed)feedback(`Answer: ${answerLabel(q)}. ${text(q.feedback.incorrect)}`);
+ save();$('question-title').focus();
+}
+function check(){
+ const q=sequence[state.index];if(currentResponse===null||(q.type==='text'&&!currentResponse.trim())||(q.type==='order'&&currentResponse.length!==q.chunks.length)){feedback('Complete your answer first, or use Skip.');return}
+ const correct=answerCorrect(q,currentResponse);record(q,Array.isArray(currentResponse)?[...currentResponse]:currentResponse,correct);
+ const option=q.type==='choice'?q.options.find(o=>o.id===currentResponse):null;
+ feedback(`${correct?'Correct.':'Try a repair.'} ${text(correct?q.feedback.correct:q.feedback.incorrect)}${!correct&&option?' '+text(option.feedback):''}`,correct);
+ // Corrective feedback reveals the target, so later retries are assisted evidence.
+ if(!correct)support(q).revealed=true;
+ $('next').hidden=false;$('check').disabled=correct;$('skip').disabled=correct;save();
+}
+$('check').onclick=check;
+$('hint').onclick=()=>{const q=sequence[state.index];support(q).hint_used=true;$('hint-text').hidden=false;$('hint-text').textContent=text(q.hint);save()};
+$('reveal').onclick=()=>{const q=sequence[state.index];support(q).revealed=true;feedback(`Answer: ${answerLabel(q)}. ${text(q.feedback.correct)}`);save()};
+$('skip').onclick=()=>{const q=sequence[state.index];record(q,null,null,true);state.index++;save();renderQuestion()};
+$('next').onclick=()=>{state.index++;save();renderQuestion()};
+function evidence(){return {schema_version:1,scope:'local-device draft; no authoritative account mastery or XP',lesson_id:lesson.id,content_version:lesson.version,run_id:state.run_id,editorial:lesson.editorial,attempts:state.attempts,objectives:lesson.objectives.map(o=>{const independent=state.attempts.filter(a=>a.phase==='exit'&&a.objective_ids.includes(o.id)&&a.correct===true&&a.attempt_number===1&&!a.hint_used&&!a.revealed&&!a.skipped);const met=o.evidence.exit_skills.every(s=>independent.some(a=>a.skill===s));return {objective_id:o.id,exit_demonstrated:met,independent_exit_question_ids:independent.map(a=>a.question_id),retention:'pending-delayed-review'}})}}
+function renderResults(){show('results');const report=evidence();$('objective-results').replaceChildren();for(const o of lesson.objectives){const item=report.objectives.find(i=>i.objective_id===o.id),row=el('div',undefined,$('objective-results'),'result-row');el('h3',text(o.can_do),row);el('p',item.exit_demonstrated?'Exit demonstrated · check again after a delay':'More practice needed · no independent exit pass yet',row);el('p',`${item.independent_exit_question_ids.length} independent exit answer(s). Retention: pending delayed review.`,row,'small muted')}$('review-plan').textContent=lesson.review.policy;$('evidence').textContent=JSON.stringify(report,null,2);$('result-title').focus();save()}
+function restart(){state=empty();save();$('start').textContent='Start the lesson';show('intro');$('lesson-title').focus()}
+for(const id of ['fresh','restart','again'])$(id).onclick=restart;
+$('start').textContent=state.index||state.attempts.length?'Resume this run':'Start the lesson';$('start').onclick=renderQuestion;
+$('export').onclick=()=>{const blob=new Blob([JSON.stringify(evidence(),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`${lesson.id}-${state.run_id}.evidence.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+document.title=`MandarinAi · ${text(lesson.title)}`;$('lesson-title').textContent=text(lesson.title);$('lesson-title').tabIndex=-1;$('lesson-subtitle').textContent=lesson.title.zh||'';if(lesson.description)$('lesson-intro').textContent=text(lesson.description);
+for(const o of lesson.objectives)el('li',text(o.can_do),$('objectives'));
+$('prerequisites').textContent=`Before you start: ${(lesson.level.prerequisites||[]).join('; ')||'See the stated learner level'}.${lesson.level.estimated_minutes?` Estimated time: ${lesson.level.estimated_minutes} minutes.`:''}`;
+for(const word of lesson.vocabulary){const row=el('div',undefined,$('words'),'word');el('span',word.zh,row,'zh').lang='zh-CN';el('span',word.pinyin,row,'small muted');el('span',text(word.translations),row,'small')}
+for(const p of lesson.patterns){const row=el('div',undefined,$('patterns'),'turn');el('h3',p.pattern,row);el('p',text(p.explanation),row,'small');el('p',p.example.zh,row,'zh').lang='zh-CN'}
+for(const turn of lesson.dialogue){const row=el('div',undefined,$('dialogue'),'turn');el('div',turn.speaker,row,'small muted');el('div',turn.zh,row,'zh').lang='zh-CN';el('div',turn.pinyin,row,'pinyin small muted');el('div',text(turn.translations),row,'small')}
+$('pinyin-toggle').onchange=()=>{for(const row of document.querySelectorAll('.pinyin'))row.hidden=!$('pinyin-toggle').checked};
+// Resume directly: redisplaying model answers during an exit check changes assistance.
+if(state.index>0||state.attempts.length||Object.keys(state.support).length)renderQuestion();
+</script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "id": "breakfast-order-01",
+  "version": "1.0.0",
+  "course_id": "everyday-speaking-pilot",
+  "title": {"zh": "早餐小任务", "en": "Your first breakfast order"},
+  "description": {"en": "Help Maya buy breakfast. Learn one useful order, try it at the stall, then use it with a new quantity and price."},
+  "level": {
+    "label": "Beginner speaking pilot; HSK mapping pending",
+    "prerequisites": ["Recognize 一, 两, 三, 六 and 九 as quantities or numbers", "Understand 你好 and 谢谢"],
+    "estimated_minutes": 8
+  },
+  "editorial": {
+    "status": "draft",
+    "language_review": "pending",
+    "audio_review": "not-applicable: no scored audio in this prototype",
+    "publication": "local prototype; no published tutorial or account XP"
+  },
+  "sources": [
+    {
+      "id": "original-pilot",
+      "title": "MandarinAi original breakfast-ordering pilot",
+      "role": "original",
+      "verification": "authored for this prototype; language editor review pending",
+      "rights": "Original dialogue, examples, questions and feedback; no textbook media copied"
+    },
+    {
+      "id": "textbook-topic-map",
+      "title": "Short-Term Spoken Chinese: Threshold, Volume 1, third edition",
+      "role": "topic-reference",
+      "verification": "Visually verified complete Lessons 3 and 4: food/drink then quantities/prices; PDF page = printed page + 12. Text layer unavailable; English labels require independent review.",
+      "printed_pages": [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29],
+      "pdf_pages": [27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41],
+      "rights": "Topic reference only; this package does not reproduce its dialogue, exercises, scans or audio"
+    }
+  ],
+  "objectives": [
+    {
+      "id": "order-food",
+      "can_do": {"en": "Understand a simple bun order and say how many buns I want."},
+      "evidence": {"exit_skills": ["comprehension", "production"], "retention_requires_delayed_review": true}
+    },
+    {
+      "id": "ask-price",
+      "can_do": {"en": "Ask the price and understand a short price reply."},
+      "evidence": {"exit_skills": ["comprehension", "interaction"], "retention_requires_delayed_review": true}
+    }
+  ],
+  "vocabulary": [
+    {"id": "w-wo", "zh": "我", "pinyin": "wǒ", "translations": {"en": "I; me"}},
+    {"id": "w-yao", "zh": "要", "pinyin": "yào", "translations": {"en": "want; would like when ordering"}},
+    {"id": "w-baozi", "zh": "包子", "pinyin": "bāozi", "translations": {"en": "steamed bun with filling"}},
+    {"id": "w-ge", "zh": "个", "pinyin": "ge", "translations": {"en": "a general classifier; used for buns here"}},
+    {"id": "w-liang", "zh": "两", "pinyin": "liǎng", "translations": {"en": "two, used before the classifier here"}},
+    {"id": "w-duoshao", "zh": "多少", "pinyin": "duōshao", "translations": {"en": "how much; how many"}},
+    {"id": "w-qian", "zh": "钱", "pinyin": "qián", "translations": {"en": "money"}},
+    {"id": "w-kuai", "zh": "块", "pinyin": "kuài", "translations": {"en": "yuan in everyday price expressions"}}
+  ],
+  "patterns": [
+    {
+      "id": "p-order",
+      "pattern": "我要 + quantity + 个 + 包子",
+      "explanation": {"en": "Say 我要, then the quantity and classifier, then the food. For two buns, use 两个包子."},
+      "example": {"zh": "我要两个包子。", "pinyin": "wǒ yào liǎng ge bāozi", "translations": {"en": "I would like two buns."}}
+    },
+    {
+      "id": "p-price",
+      "pattern": "多少钱？ / number + 块钱",
+      "explanation": {"en": "When the item is clear, 多少钱？ asks its price. A reply such as 六块钱 means six yuan."},
+      "example": {"zh": "多少钱？六块钱。", "pinyin": "duōshao qián liù kuài qián", "translations": {"en": "How much? Six yuan."}}
+    }
+  ],
+  "dialogue": [
+    {"id": "d-01", "speaker": "Lian", "zh": "你好，你要什么？", "pinyin": "nǐ hǎo nǐ yào shénme", "translations": {"en": "Hello. What would you like?"}},
+    {"id": "d-02", "speaker": "Maya", "zh": "我要两个包子。", "pinyin": "wǒ yào liǎng ge bāozi", "translations": {"en": "I would like two buns."}},
+    {"id": "d-03", "speaker": "Maya", "zh": "多少钱？", "pinyin": "duōshao qián", "translations": {"en": "How much?"}},
+    {"id": "d-04", "speaker": "Lian", "zh": "六块钱。", "pinyin": "liù kuài qián", "translations": {"en": "Six yuan."}},
+    {"id": "d-05", "speaker": "Maya", "zh": "谢谢！", "pinyin": "xièxie", "translations": {"en": "Thank you!"}}
+  ],
+  "questions": [
+    {
+      "id": "practice-meaning", "phase": "practice", "type": "choice", "skill": "meaning", "difficulty": 1,
+      "objective_ids": ["order-food"], "vocabulary_ids": ["w-yao", "w-baozi"], "pattern_ids": ["p-order"], "source_ids": ["original-pilot"],
+      "prompt": {"en": "What is Maya doing when she says 我要两个包子？"},
+      "options": [
+        {"id": "order", "text": "Ordering two buns", "feedback": {"en": "我要 introduces what she wants to order."}},
+        {"id": "price", "text": "Asking the price", "feedback": {"en": "A price question uses 多少钱, which is absent here."}},
+        {"id": "thanks", "text": "Thanking the seller", "feedback": {"en": "谢谢 is thanks. 我要 introduces an order."}}
+      ],
+      "answer": {"option_id": "order"},
+      "hint": {"en": "要 tells you what someone wants."},
+      "feedback": {"correct": {"en": "我要 means I would like; 两个包子 names two buns."}, "incorrect": {"en": "This is an order: I would like two buns."}}
+    },
+    {
+      "id": "practice-order", "phase": "practice", "type": "order", "skill": "word-order", "difficulty": 2,
+      "objective_ids": ["order-food"], "vocabulary_ids": ["w-wo", "w-yao", "w-liang", "w-ge", "w-baozi"], "pattern_ids": ["p-order"], "source_ids": ["original-pilot"],
+      "prompt": {"en": "Build Maya's order for two buns."},
+      "chunks": [{"id": "i", "text": "我"}, {"id": "want", "text": "要"}, {"id": "two", "text": "两个"}, {"id": "bun", "text": "包子"}],
+      "answer": {"chunk_ids": ["i", "want", "two", "bun"]},
+      "hint": {"en": "Start with the person, then 要, then quantity and food."},
+      "feedback": {"correct": {"en": "我要两个包子 puts the order in a natural sequence."}, "incorrect": {"en": "Use 我 → 要 → 两个 → 包子."}}
+    },
+    {
+      "id": "practice-price", "phase": "practice", "type": "text", "skill": "production", "difficulty": 2,
+      "objective_ids": ["ask-price"], "vocabulary_ids": ["w-duoshao", "w-qian"], "pattern_ids": ["p-price"], "source_ids": ["original-pilot"],
+      "prompt": {"en": "The buns are already selected. Type the short Chinese question that asks their price."},
+      "answer": {"accepted": ["多少钱", "多少钱啊"], "normalization": {"nfkc": true, "ignore_whitespace": true, "ignore_punctuation": "，。！？、,.!?"}},
+      "hint": {"en": "Use 多少 (how much) plus 钱 (money)."},
+      "feedback": {"correct": {"en": "多少钱？ asks the price when the item is understood."}, "incorrect": {"en": "Say 多少钱？ to ask How much?"}}
+    },
+    {
+      "id": "mission-order", "phase": "mission", "type": "text", "skill": "production", "difficulty": 3,
+      "objective_ids": ["order-food"], "vocabulary_ids": ["w-wo", "w-yao", "w-liang", "w-ge", "w-baozi"], "pattern_ids": ["p-order"], "source_ids": ["original-pilot"],
+      "prompt": {"en": "At the bun stall, order two buns for Maya in Chinese."},
+      "answer": {"accepted": ["我要两个包子", "两个包子", "请给我两个包子", "我要两个包子谢谢"], "normalization": {"nfkc": true, "ignore_whitespace": true, "ignore_punctuation": "，。！？、,.!?"}},
+      "hint": {"en": "Two before 个 is 两, not 二."},
+      "feedback": {"correct": {"en": "Your order communicates the food and quantity. The seller can fill it."}, "incorrect": {"en": "A clear reply is 我要两个包子。 Include the quantity and buns."}}
+    },
+    {
+      "id": "mission-payment", "phase": "mission", "type": "choice", "skill": "comprehension", "difficulty": 2,
+      "objective_ids": ["ask-price"], "vocabulary_ids": ["w-kuai", "w-qian"], "pattern_ids": ["p-price"], "source_ids": ["original-pilot"],
+      "prompt": {"en": "The seller says 六块钱。 Which payment matches the reply?"},
+      "options": [
+        {"id": "two", "text": "¥2", "feedback": {"en": "Two is the bun quantity from the order, not the price in this reply."}},
+        {"id": "six", "text": "¥6", "feedback": {"en": "六 is six; 块钱 expresses the price in yuan."}},
+        {"id": "nine", "text": "¥9", "feedback": {"en": "Nine would be 九. The seller said 六."}}
+      ],
+      "answer": {"option_id": "six"},
+      "hint": {"en": "Read the number before 块钱."},
+      "feedback": {"correct": {"en": "Six yuan matches 六块钱."}, "incorrect": {"en": "六块钱 means six yuan. The bun quantity does not determine the number you heard or read."}}
+    },
+    {
+      "id": "exit-order-read", "phase": "exit", "type": "choice", "skill": "comprehension", "difficulty": 2,
+      "objective_ids": ["order-food"], "vocabulary_ids": ["w-ge", "w-baozi"], "pattern_ids": ["p-order"], "source_ids": ["original-pilot"],
+      "prompt": {"en": "A new customer says 三个包子。 What should the seller prepare?"},
+      "options": [
+        {"id": "one", "text": "One bun", "feedback": {"en": "One is 一; the customer used 三."}},
+        {"id": "three", "text": "Three buns", "feedback": {"en": "三个 specifies three items and 包子 names the food."}},
+        {"id": "six", "text": "Six buns", "feedback": {"en": "Six is 六; the customer used 三."}}
+      ],
+      "answer": {"option_id": "three"},
+      "hint": {"en": "三 is the quantity; 个 is the classifier."},
+      "feedback": {"correct": {"en": "You understood a quantity different from the model order."}, "incorrect": {"en": "The customer asked for three buns: 三个包子."}}
+    },
+    {
+      "id": "exit-order-say", "phase": "exit", "type": "text", "skill": "production", "difficulty": 3,
+      "objective_ids": ["order-food"], "vocabulary_ids": ["w-wo", "w-yao", "w-ge", "w-baozi"], "pattern_ids": ["p-order"], "source_ids": ["original-pilot"],
+      "prompt": {"en": "You are ordering for yourself now. Ask for just one bun in Chinese."},
+      "answer": {"accepted": ["我要一个包子", "一个包子", "请给我一个包子", "我要一个包子谢谢"], "normalization": {"nfkc": true, "ignore_whitespace": true, "ignore_punctuation": "，。！？、,.!?"}},
+      "hint": {"en": "Use 一 for one and put 个 before 包子."},
+      "feedback": {"correct": {"en": "You changed the quantity to make your own order."}, "incorrect": {"en": "A clear order is 我要一个包子。 The quantity must be one."}}
+    },
+    {
+      "id": "exit-price-read", "phase": "exit", "type": "choice", "skill": "comprehension", "difficulty": 2,
+      "objective_ids": ["ask-price"], "vocabulary_ids": ["w-kuai", "w-qian"], "pattern_ids": ["p-price"], "source_ids": ["original-pilot"],
+      "prompt": {"en": "For another order, the reply is 九块钱。 How much is it?"},
+      "options": [
+        {"id": "three", "text": "¥3", "feedback": {"en": "Three would be 三. This reply uses 九."}},
+        {"id": "six", "text": "¥6", "feedback": {"en": "Six was the model price. This new reply uses a different number."}},
+        {"id": "nine", "text": "¥9", "feedback": {"en": "九 is nine, so 九块钱 is nine yuan."}}
+      ],
+      "answer": {"option_id": "nine"},
+      "hint": {"en": "九 means nine."},
+      "feedback": {"correct": {"en": "You understood the new price independently of the model."}, "incorrect": {"en": "九块钱 means nine yuan. Use the new reply rather than the earlier model price."}}
+    },
+    {
+      "id": "exit-price-ask", "phase": "exit", "type": "choice", "skill": "interaction", "difficulty": 3,
+      "objective_ids": ["ask-price"], "vocabulary_ids": ["w-baozi", "w-duoshao", "w-qian"], "pattern_ids": ["p-price"], "source_ids": ["original-pilot"],
+      "prompt": {"en": "At a new stall, you have selected a bun but no price is shown. Which reply obtains the missing information?"},
+      "options": [
+        {"id": "ask", "text": "这个包子多少钱？", "feedback": {"en": "This asks the price of the selected bun."}},
+        {"id": "order", "text": "我要两个包子。", "feedback": {"en": "This places another order but does not ask the price."}},
+        {"id": "thanks", "text": "谢谢你！", "feedback": {"en": "Thanks is polite but does not obtain the missing price."}}
+      ],
+      "answer": {"option_id": "ask"},
+      "hint": {"en": "Look for the phrase that asks how much money."},
+      "feedback": {"correct": {"en": "The question requests the missing price for this item. This is constrained dialogue evidence, not free speech."}, "incorrect": {"en": "Ask 这个包子多少钱？ to find the price before paying."}}
+    }
+  ],
+  "flow": [
+    {"id": "practice", "phase": "practice", "title": {"en": "Try the pattern"}, "question_ids": ["practice-meaning", "practice-order", "practice-price"]},
+    {"id": "mission", "phase": "mission", "title": {"en": "Help Maya buy breakfast"}, "question_ids": ["mission-order", "mission-payment"]},
+    {"id": "exit", "phase": "exit", "title": {"en": "Your turn at a new stall"}, "question_ids": ["exit-order-read", "exit-order-say", "exit-price-read", "exit-price-ask"]}
+  ],
+  "review": {
+    "scope": "local-device prototype; no backend SRS write",
+    "policy": "Return after a delay with different quantities, prices and wording. Reassess missed objectives without hints before claiming retention.",
+    "suggested_delay_days": 1
+  }
+}

@@ -30,7 +30,7 @@ accent yellow `#ffc107`, the 中文-badge logo, and the 19-character brand unive
 | `mandarinai-wechat-layout` | WeChat 公众号 layout engine — Markdown/docx/PDF → themed inline-styled HTML that pastes into the 公众号 editor without losing styles; 6 theme component libraries + theme generator, auto chapter numbering, keyword underlines, dual lint/validate scripts, copy-button preview page | python3 (validators) |
 | `mandarinai-video-fetch` | Video link → clean transcript (YouTube / bilibili / xiaohongshu / douyin); feeds mandarinai-writes / card / ppt | yt-dlp + ffmpeg; whisper for no-sub videos |
 | `mandarinai-book` | 拆书 — deconstructs a book (问题/零点/位移/落点/行囊) + ASCII cognitive map; grounds on web or local EPUB/PDF | none (pdftotext for PDFs outside Claude Code) |
-| `mandarinai-game` | Browser 3D games adapted from Chinese stories and books (十二生肖, 西游记, 成语故事…), cast with the MandarinAi characters where they fit; pinyin dialogue + collectible words; procedural motion for the (unrigged) cast models; self-verifying via `window.G` hooks + headless play-check; packs to one offline HTML | Node; Playwright (checks); cast `.glb` sources outside the repo |
+| `mandarinai-game` | Browser story games and assessed Mandarin missions; lesson-first route for textbooks/quizzes, existing 3D story scaffold with the MandarinAi cast, Swan integration guidance, optional offline packaging | Node; Playwright (checks); cast `.glb` sources for 3D |
 | `mandarinai-video` | Promo/tutorial MP4s for Goose HSK words, grammar, universities, and processed articles; real Swan links, seven named presenters, dialogue, BPM/cues, quiet music, editable preview, measured narration, SRT, verified audio/video; standalone templates retained | Python 3 + Node + Playwright + ffmpeg |
 
 ### Mandarin learner tools
@@ -42,9 +42,32 @@ it → **`mandarinai-flashcard`** turns its 生词表 into a deck. Poem/pinyin c
 
 | Skill | What it does | Data source | Extra deps |
 |-------|--------------|-------------|------------|
+| `mandarinai-lesson` | Objective-linked lesson JSON, quiz/accepted-answer rules, practice → mission → exit flow, semantic validation and a local interactive preview; shared content for games, review and later video | Original brief or verified source map; Goose ID mapping is an adapter step | Python 3 standard library |
 | `mandarinai-flashcard` | HSK / vocab flashcards: Anki `.apkg` (recognition + recall, optional TTS audio) and 1080x1440 PNG vocab cards, each linking back to the word's mandarinai.com page | live `mandarinai.com/api/flashcards/hsk` (11k+ words, HSK 1–7/9, multilingual); bundled export as offline fallback | python venv (genanki), Node + Playwright |
 | `mandarinai-reader` | Turns a video (Rednote/Bilibili/YouTube/Douyin), article, or topic into an HSK-graded reading article — controlled vocab + grammar, optional 生词表 / pinyin / grammar points | pure text generation; pairs with `mandarinai-video-fetch` for transcripts | none |
 | `mandarinai-story-video` | Graded-story 1080x1440 learner videos with ruby pinyin, approximate character reveal, translations, TTS, title/end cards; use `mandarinai-video` for promos and other tutorials | Swan `/tts`; real article sentences can come from the video source helper | Node (gsap + hyperframes), ffmpeg |
+
+### Lessons, quizzes, and game missions
+
+`mandarinai-lesson` authors a source-mapped package before game or video production.
+The included breakfast pilot has two can-do objectives, nine questions, explicit
+accepted variants, corrective feedback, and new exit prompts. Its English-UI preview
+stores device-local attempts and exports evidence; it makes no account XP, published
+course, verified HSK placement, or retention claim.
+
+From `skills/mandarinai-lesson/`, using a new output filename:
+
+```bash
+python3 scripts/validate-lesson.py examples/breakfast-order.lesson.json
+python3 scripts/build-preview.py examples/breakfast-order.lesson.json --out /absolute/task/breakfast-preview.html
+python3 -m unittest discover -s tests -v
+```
+
+Then use `mandarinai-game` for the playable scene. Its assessed-mission reference
+preserves Swan's host/session contracts and requires an explicit lesson scope rather
+than treating an HSK level as a content boundary. Promotional videos can later use
+reviewed lesson beats with `mandarinai-video`; its current content-fetch helper does
+not accept lesson JSON directly, so use a supported brief or add a deliberate adapter.
 
 ### Content-driven video production
 

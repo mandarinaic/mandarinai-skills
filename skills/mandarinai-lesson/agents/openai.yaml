@@ -1,0 +1,8 @@
+interface:
+  display_name: "MandarinAi Lesson"
+  short_description: "Structured Mandarin lessons, quizzes, and game-ready content"
+  brand_color: "#1b46a2"
+  default_prompt: "Use $mandarinai-lesson to turn this source into an original beginner lesson with assessable objectives, graded quizzes, and an interactive preview ready for a learning mission."
+
+policy:
+  allow_implicit_invocation: true

@@ -3,6 +3,11 @@
 MandarinAi games teach while they tell the story. The layer is on by default and should
 feel like part of the game, never a quiz bolted on.
 
+For textbook courses and requests to assess learning, begin with `mandarinai-lesson`
+and [assessment-games.md](assessment-games.md). This document describes the story
+exposure layer. Seeing dialogue or collecting a word is not a successful retrieval
+attempt; keep those events separate from question evidence and delayed review.
+
 ## Dialogue lines
 
 Every spoken line in `story.js` is `{ who, zh, py, en }`:
