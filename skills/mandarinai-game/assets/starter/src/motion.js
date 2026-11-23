@@ -5,6 +5,10 @@
 // for squash and flash only.
 import * as THREE from 'three';
 
+// No Math.random() here: the same frames must pose the cast the same way (tests, ?demo, posters).
+// Breathing offsets are spread by creation order (golden-ratio steps) so idle actors stay out of sync.
+let made = 0;
+
 export function makeActor(model, { maxSpeed = 4.5, hopHeight = 0.07 } = {}) {
   const root = new THREE.Group();   // position + facing: game logic writes here
   const body = new THREE.Group();   // procedural offsets: only this file writes here
@@ -17,7 +21,7 @@ export function makeActor(model, { maxSpeed = 4.5, hopHeight = 0.07 } = {}) {
     o.material.emissive = new THREE.Color(0xffffff); o.material.emissiveIntensity = 0;
     mats.push(o.material);
   });
-  return { root, body, model, mats, maxSpeed, hopHeight, speed: 0, phase: 0, t: Math.random() * 10, squash: 0, flash: 0, hop: 0, hopV: 0, freeze: 0 };
+  return { root, body, model, mats, maxSpeed, hopHeight, speed: 0, phase: 0, t: (made++ * 6.18034) % 10, squash: 0, flash: 0, hop: 0, hopV: 0, freeze: 0 };
 }
 
 // Turn toward a world-space direction at a capped rate (radians per second).
@@ -34,7 +38,7 @@ export const jump = (actor, v = 3.2) => { if (actor.hop <= 0) { actor.hopV = v; 
 export const hitstop = (actor, seconds) => { actor.freeze = Math.max(actor.freeze, seconds); };
 
 export function animate(actor, dt) {
-  if (actor.freeze > 0) { actor.freeze -= dt; dt = 0; actor.body.position.x = (Math.random() - 0.5) * 0.03; }
+  if (actor.freeze > 0) { actor.freeze -= dt; dt = 0; actor.body.position.x = Math.sin(actor.freeze * 400) * 0.015; }   // shake driven by the countdown
   else actor.body.position.x = 0;
   actor.t += dt;
   const k = Math.min(actor.speed / actor.maxSpeed, 1);

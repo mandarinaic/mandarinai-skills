@@ -5,12 +5,18 @@
 //
 // Usage:
 //   node scripts/play-check.mjs <url> --shot out.png [--script steps.js] [--size 1280x800] [--demo [frames]]
+//   node scripts/play-check.mjs <url> --poster <frames> --shot poster.png [--size 1200x630]
 // steps.js is evaluated in the page after G.ready, as the body of an async function
 // with G in scope, e.g.  G.start(); G.step(30); G.advance(); G.hold('KeyW'); G.step(120);
 // Its return value is printed as JSON. A file:// URL works too (single-HTML builds).
 // --demo runs the game's own autoplay (G.demo) to its end before the script, logic-only,
 // and fails if it has not finished within the frame budget (default 36000 = 10 game minutes).
+// --poster plays exactly <frames> demo steps, then shoots: the same frames give the same
+// image, recorded next to it as <shot>.json (method, frames, size, sha256, state).
+// The page opens with ?paused so its real-time loop never runs: every frame is pushed here,
+// and the screenshot shows exactly the state that is printed.
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import { chromium } from 'playwright';
 
 const args = process.argv.slice(2);
@@ -22,6 +28,10 @@ const shot = opt('--shot');
 const script = opt('--script') ? fs.readFileSync(opt('--script'), 'utf8') : '';
 const demoAt = args.indexOf('--demo');
 const demoBudget = demoAt < 0 ? 0 : Number(/^\d+$/.test(args[demoAt + 1] || '') ? args[demoAt + 1] : 36000);
+const posterAt = Number(opt('--poster', 0));
+if (opt('--poster') !== undefined && !(posterAt > 0)) { console.error('--poster needs a frame count > 0'); process.exit(2); }
+if (posterAt && !shot) { console.error('--poster needs --shot <file>'); process.exit(2); }
+if (posterAt && demoBudget) { console.error('use --poster or --demo, not both'); process.exit(2); }
 
 // --disable-gpu: macOS denies Playwright's libEGL and a dying GPU process kills the page;
 // SwiftShader gives WebGL a deterministic software path instead.
@@ -43,11 +53,16 @@ page.on('request', (r) => {
 });
 
 try {
-  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  const open = new URL(url); open.searchParams.set('paused', '');
+  await page.goto(open.href, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForFunction(() => window.G && (window.G.ready || window.G.errors.length), null, { timeout: 60000 });
-  const result = await page.evaluate(async ({ body, demoBudget }) => {
-    const G = window.G; G.step?.(2);
+  const result = await page.evaluate(async ({ body, demoBudget, posterAt }) => {
+    const G = window.G; G.paused = true; G.step?.(2);
     let demo = null;
+    if (posterAt) {
+      if (!G.demo) throw new Error('--poster: this page has no G.demo autoplay (see the starter src/autoplay.js)');
+      G.demo.start(); G.upd(posterAt);
+    }
     if (demoBudget) {
       if (!G.demo) throw new Error('--demo: this page has no G.demo autoplay (see the starter src/autoplay.js)');
       G.demo.start(); let frames = 0;
@@ -56,14 +71,20 @@ try {
       G.step(1);
     }
     const r = await new Function('G', `return (async () => { ${body} })()`)(G);
+    G.render?.();   // draw the final state: logic-only G.upd leaves the last frame stale
     return { result: r ?? null, demo, state: G.state?.() ?? null, errors: G.errors };
-  }, { body: script, demoBudget });
+  }, { body: script, demoBudget, posterAt });
   if (shot) await page.screenshot({ path: shot, timeout: 20000 }).catch(async () => {
     // screenshot() waits on fonts internally; fall back to raw CDP capture
     const cdp = await page.context().newCDPSession(page);
     const { data } = await cdp.send('Page.captureScreenshot', { format: 'png' });
     fs.writeFileSync(shot, Buffer.from(data, 'base64'));
   });
+  if (posterAt) {
+    const sha256 = crypto.createHash('sha256').update(fs.readFileSync(shot)).digest('hex');
+    fs.writeFileSync(`${shot}.json`, JSON.stringify({ method: 'demo-frames', frames: posterAt, size: `${w}x${h}`, url, sha256, state: result.state }, null, 2) + '\n');
+    result.poster = { frames: posterAt, sha256 };
+  }
   console.log(JSON.stringify(result, null, 2));
   if (external.length) problems.push(`external requests (a shipped game must make none): ${[...new Set(external)].join(', ')}`);
   if (result.demo && !result.demo.finished) problems.push(`demo still running after ${result.demo.frames} frames: its plan() never reaches an end`);

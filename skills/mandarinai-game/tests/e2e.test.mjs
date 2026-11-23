@@ -44,6 +44,13 @@ test('starter plays start to finish in dev and as a packed single file', { skip:
     assert.equal(demo.demo.finished, true, 'the starter demo should play itself to the end');
     assert.equal(demo.state.mode, 'end');
     assert.equal(demo.state.words.length, 3);
+    // posters: the same demo frame must give the same image, recorded beside it
+    const shoot = (f) => node(['scripts/play-check.mjs', `http://localhost:${port}/?mute`, '--poster', '880', '--shot', path.join(dir, f), '--size', '600x315']);
+    shoot('a.png'); shoot('b.png');
+    const rec = (f) => JSON.parse(fs.readFileSync(path.join(dir, `${f}.json`), 'utf8'));
+    assert.equal(rec('a.png').method, 'demo-frames');
+    assert.equal(rec('a.png').state.mode, 'cut', 'frame 880 of the starter demo is the ferry crossing');
+    assert.equal(rec('a.png').sha256, rec('b.png').sha256, 'the same poster frame must render identically');
   } finally { server.kill(); }
 
   node(['scripts/build-single-html.mjs', game, '--name', 'zodiac']);

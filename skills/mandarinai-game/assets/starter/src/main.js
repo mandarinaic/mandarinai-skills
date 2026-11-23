@@ -1,7 +1,7 @@
 // MandarinAi game starter: one scene, a playable cast member, an NPC, a scripted
 // cutscene, collectible words, and the debug hooks every later stage relies on.
 // URL switches: ?auto (skip title)  ?demo (plays itself; any key or tap takes over)  ?mute
-//               ?show=cast (character lineup)  ?god (no gate lock)
+//               ?show=cast (character lineup)  ?god (no gate lock)  ?paused (frames only via G.step)
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { keys, pressed, endFrame, debugPanel } from './input.js';
@@ -323,6 +323,7 @@ Object.assign(G, {
   step: (n = 60, dt = 1 / 60) => { for (let i = 0; i < n; i++) frame(dt); return G.state(); },          // logic + render: slow, keep n small
   upd: (n = 60, dt = 1 / 60) => { for (let i = 0; i < n; i++) frame(dt, false); return G.state(); },  // logic only: use for long scripted runs
   render: () => { renderer.render(scene, camera); },
+  paused: Q.has('paused'),   // true stops the real-time loop; G.step / G.upd still advance the game
   press: (...codes) => codes.forEach((c) => pressed.add(c)),
   hold: (code, on = true) => (on ? keys.add(code) : keys.delete(code)),
   teleport: (x, z) => { player.root.position.set(x, 0, z); focus.copy(player.root.position); },
@@ -354,7 +355,7 @@ $('#start').addEventListener('click', start);
 const fixed = createFixedStep();
 let last = performance.now();
 function loop(now) {
-  const n = fixed.advance((now - last) / 1000); last = now;
+  const n = G.paused ? 0 : fixed.advance((now - last) / 1000); last = now;   // G.paused: tests drive every frame
   for (let i = 0; i < n; i++) frame(fixed.dt, false);
   if (n) { renderer.render(scene, camera); panel(); }
   requestAnimationFrame(loop);

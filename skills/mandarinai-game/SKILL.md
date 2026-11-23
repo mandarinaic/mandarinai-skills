@@ -146,7 +146,8 @@ Background tabs run no `requestAnimationFrame`, so the game exposes hooks on `wi
 `G.step(n)` (logic + render, slow), `G.upd(n)` (logic only, use for long runs), `G.press(code)`,
 `G.hold(code, on)`, `G.teleport(x, z)`, `G.advance()` (dialogue), `G.start()`, `G.state()`,
 `G.errors`, `G.demo` (`.start()`, `.stop()`, `.running`). URL switches: `?auto` skip title,
-`?demo` the game plays itself (any real key or tap takes over), `?mute`, `?show=cast` lineup, `?god`.
+`?demo` the game plays itself (any real key or tap takes over), `?mute`, `?show=cast` lineup, `?god`,
+`?paused` (real-time loop off; play-check adds it so screenshots match the printed state).
 
 ```bash
 node scripts/play-check.mjs "http://localhost:5173/?mute" --shot /abs/shot.png --script /abs/steps.js
@@ -156,12 +157,18 @@ node scripts/play-check.mjs "http://localhost:5173/?mute" --shot /abs/shot.png -
 `G.demo` to its end first and fails if it never finishes. When the story changes, rewrite
 `demoPlan()` in `main.js` as the new route (read game state only); a finished demo is the
 cheapest whole-story regression, and a live `?demo` run is ready-made trailer footage.
+
+Poster / share image: `play-check.mjs <url> --poster <frames> --shot poster.png --size 1200x630`
+plays exactly that many demo steps and writes `poster.png.json` (method, frames, sha256, state);
+the same frame gives a byte-identical image. Pick the frame by probing `G.state().mode` over the
+demo, and hide HUD elements in a steps script when the image is cover art rather than evidence.
 `tests/full-loop.steps.js` is a worked example that plays the starter start to finish.
 Skill regression (scaffold, play, pack, replay packed): `node --test tests/*.test.mjs`. Rules:
 
 - **Numbers decide, screenshots support.** A frame-stepped screenshot can be stale; state is not.
 - Logic runs in **fixed 1/60 s steps** (`src/loop.js`); animate from the game clock `clock`,
-  never `performance.now()` or `Date.now()`, or stepped runs and the demo stop repeating.
+  never `performance.now()`, `Date.now()` or `Math.random()` (use the seeded `mulberry32`),
+  or stepped runs, the demo and posters stop repeating.
 - Honour `prefers-reduced-motion`: non-essential motion (title orbit, pops, shakes) holds still.
 - Keep every game flow **synchronous in game time**: dialogue completion, delays, and toasts
   advance with `dt`, never `setTimeout` or Promise chains — microtasks do not run between
