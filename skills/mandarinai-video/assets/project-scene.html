@@ -22,12 +22,12 @@ body.ink{--paper:#102047;--ink:#f7f8ff;--accent:#ffc107;--muted:#c5d0e8;--line:#
 @media(min-aspect-ratio:9/10) and (max-aspect-ratio:4/3){.heading{font-size:6.7vw}.content{font-size:5.2vw}.translation{font-size:2.7vw}.body{gap:2vh;padding:3vh 0}.hero .heading,.cta .heading{font-size:8vw}.hero .content,.cta .content{font-size:4vw}li{font-size:2.7vw;padding:1.5vh 2vw}ul{gap:1.4vh}.screenshot figure{max-height:35vh}.screenshot figure img{max-height:34vh}}
 @media(min-aspect-ratio:4/3){.presenter-strip{align-self:flex-start;max-width:65%;gap:1.5vw;padding:.7vh 1.5vw;border-radius:1vw}.presenter-name{font-size:1.8vw}.presenter-role{font-size:1.2vw}.has-cast .body{padding:2vh 0;gap:1.5vh}.has-cast .heading{font-size:4.5vw}.has-cast.hero .heading,.has-cast.cta .heading{font-size:5.8vw}.has-cast .content{font-size:3.3vw}.has-cast .translation{font-size:1.8vw}.has-cast.screenshot .body{padding-right:45%}.has-cast.screenshot figure{height:calc(100% - 4vh);max-height:none;top:2vh}.has-cast.screenshot figure img{max-height:100%}.dialogue-lines{grid-template-columns:1fr 1fr;gap:2vw}.dialogue-line{gap:1.5vw;padding:1.5vh 1.5vw;border-radius:1vw}.dialogue-portrait{width:6vw;height:6vw;max-width:12vh;max-height:12vh}.speaker-name{font-size:1.5vw}.line-chinese{font-size:3vw}.line-translation{font-size:1.7vw}.dialogue-line.is-active{box-shadow:inset .4vw 0 var(--accent)}}
 @media(min-aspect-ratio:9/10) and (max-aspect-ratio:4/3){.presenter-name{font-size:2.4vw}.presenter-role{font-size:1.7vw}.presenter-strip{min-height:8vh;max-height:10vh}.has-cast .body{padding:2vh 0;gap:1.5vh}.has-cast .heading{font-size:5.5vw}.has-cast.hero .heading,.has-cast.cta .heading{font-size:6.8vw}.has-cast .content{font-size:4.2vw}.has-cast .translation{font-size:2.3vw}.dialogue-lines{gap:1.4vh}.dialogue-line{padding:1.2vh 2vw}.dialogue-portrait{height:8vw;width:8vw}.line-chinese{font-size:3.8vw}.line-translation{font-size:2.3vw}.speaker-name{font-size:1.8vw}}
-[data-enter]{will-change:transform,opacity}
+[data-enter]{will-change:transform,opacity}.body{transform-origin:50% 50%}
 </style>
 </head>
 <body class="@@STYLE@@">
 <main class="scene @@LAYOUT@@" aria-label="@@HEADING@@">
-  <header class="top" data-enter="0"><img class="brand" src="../assets/mandarinai-logo.png" alt="MandarinAi"><span class="edition">@@MODE@@ / 中文学习</span></header>
+  <header class="top"><img class="brand" src="../assets/mandarinai-logo.png" alt="MandarinAi"><span class="edition">@@MODE@@ / 中文学习</span></header>
   <section class="body">
     <div class="eyebrow" data-enter="0.06">@@LABEL@@</div>
     <h1 class="heading" data-enter="0.12" data-cue="heading">@@HEADING@@</h1>
@@ -38,7 +38,7 @@ body.ink{--paper:#102047;--ink:#f7f8ff;--accent:#ffc107;--muted:#c5d0e8;--line:#
     @@IMAGE@@
   </section>
   @@PRESENTER_HTML@@
-  <footer class="footer" data-enter="0.10"><span class="source">@@FOOTER@@</span><span class="counter">@@INDEX@@ / @@COUNT@@</span></footer>
+  <footer class="footer"><span class="source">@@FOOTER@@</span><span class="counter">@@INDEX@@ / @@COUNT@@</span></footer>
   <div class="progress"><span></span></div>
 </main>
 <script>
@@ -77,6 +77,13 @@ function updatePresenter(t){
   presenter.dataset.speaker=profile.id||current?.speaker||DATA.speaker||'';
   presenter.classList.toggle('is-speaking',Boolean(current&&t>=current.start&&t<current.start+current.duration));
 }
+// Header, footer, and presenter persist across cuts, so they never fade: a cut
+// swaps the content on a steady frame instead of flashing an empty page.
+// The body pushes in 3% over 6 s (smoothstep, then holds). Centered scaling grows
+// each edge by 1.5% of the body, which its own padding absorbs. No will-change:
+// a cached layer raster scaled to a new size depends on seek order.
+const PUSH_IN=.03,PUSH_SECONDS=6;
+const body=document.querySelector('.body');
 // Pure seeking supports captures in any order and never reads wall time.
 window.renderAt=function(seconds){
   const duration=Number(document.documentElement.dataset.duration);
@@ -96,6 +103,8 @@ window.renderAt=function(seconds){
     el.classList.toggle('is-past',t>=end);
   });
   updatePresenter(t);
+  const push=Math.min(1,t/PUSH_SECONDS);
+  body.style.transform=`scale(${1+PUSH_IN*push*push*(3-2*push)})`;
   document.querySelector('.progress span').style.transform=`scaleX(${Math.min(1,t/duration)})`;
 };
 window.renderAt(0);

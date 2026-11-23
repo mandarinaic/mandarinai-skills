@@ -259,3 +259,34 @@ test('determinism check skips legacy scenes without renderAt', async () => {
   assert.equal(report.status, 'skipped');
   assert.equal(report.scenes[0].status, 'skipped');
 });
+
+test('starter scenes keep persistent chrome on the cut frame and push in slowly without leaving the body', async () => {
+  const { project } = await castFixture('starter-motion');
+  const browser = await chromium.launch({ headless: true, ...(executablePath ? { executablePath } : {}), args: ['--no-sandbox'] });
+  try {
+    for (const viewport of [{ width: 320, height: 568 }, { width: 960, height: 540 }]) {
+      const page = await browser.newPage({ viewport });
+      await page.goto(pathToFileURL(join(project, 'scenes', '01.html')).href);
+      const at = t => page.evaluate(t => {
+        window.renderAt(t);
+        const body = document.querySelector('.body'), box = el => el.getBoundingClientRect();
+        const content = [...body.children].map(box).filter(r => r.height);
+        return { top: Number(getComputedStyle(document.querySelector('.top')).opacity),
+          footer: Number(getComputedStyle(document.querySelector('.footer')).opacity),
+          presenter: Number(getComputedStyle(document.querySelector('.presenter-strip')).opacity),
+          scale: new DOMMatrix(getComputedStyle(body).transform).a,
+          body: box(body), contentBottom: Math.max(...content.map(r => r.bottom)), contentTop: Math.min(...content.map(r => r.top)),
+          presenterTop: box(document.querySelector('.presenter-strip')).top };
+      }, t);
+      const cut = await at(0);
+      assert.deepEqual([cut.top, cut.footer, cut.presenter], [1, 1, 1], `chrome hidden on the cut frame at ${viewport.width}x${viewport.height}`);
+      assert.equal(cut.scale, 1);
+      const middle = await at(2), end = await at(4);
+      assert.ok(middle.scale > 1 && middle.scale < end.scale, JSON.stringify([middle.scale, end.scale]));
+      assert.ok(end.scale <= 1.03 + 1e-9);
+      assert.ok(end.contentBottom <= end.presenterTop, JSON.stringify({ viewport, end }));
+      assert.ok(end.contentTop >= end.body.top - 1, JSON.stringify({ viewport, end }));
+      await page.close();
+    }
+  } finally { await browser.close(); }
+});

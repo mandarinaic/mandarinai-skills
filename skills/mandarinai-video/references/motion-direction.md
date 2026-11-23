@@ -16,6 +16,8 @@ Within each shot, describe what changes: a component joins a sentence, a word ga
 
 The `clean`, `editorial`, and `ink` starter palettes are deliberately small. For more elaborate work, customize the generated HTML with a paused GSAP timeline or direct SVG/canvas drawing controlled by `renderAt(t)`. Retain local assets and a fixed canvas. A still listening, reading, or retrieval beat is valid; continuous motion is not a teaching requirement.
 
+The starter keeps the header, footer, and presenter strip steady across cuts (only scene content enters) and pushes the content in 3% over the first 6 seconds. That push is deliberately subtle. On a sparse light page it changes too few pixels per step to clear the motion advisory, so the advisory can still flag a long narrated scene. The teaching remedy is a staged reveal: split the explanation into scene `cues` that bring in each component, example, or bullet as the narration reaches it. A larger zoom that makes study text swim is not the remedy. Never put `will-change: transform` on an element whose scale changes over time. Chrome then scales a cached raster, and its sharpness depends on seek order.
+
 ## Plan rhythm before generating frames
 
 Write the learning objective/benefit, audience, language, CTA destination, and a scene list. For each scene note the key event, on-screen text, narration, and reading/practice hold. Decide the hook, central explanation, densest view, and ending before rendering. A promo can emphasize fewer ideas than a lesson.
