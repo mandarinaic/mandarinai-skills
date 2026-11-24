@@ -175,6 +175,14 @@ fails when a run never ends (the learner is trapped) or, with `--time`, lands ou
 Set the window in PLAN.md from the target session length; tune pacing until accuracy 0.6 sits
 comfortably inside it. A seed replays exactly, so a failing seed is a reproducible bug report.
 
+Phones: add `--device phone,phone-landscape,laptop` (instead of `--size`) to any check to repeat it
+per device; phones run at dpr 2 with touch emulation and shots get a `-<device>` suffix. On every
+device the final screen must fit: text, buttons or images outside the viewport, text drawn over
+other text, or a page that scrolls sideways fail the check. It checks the screen the run ends on,
+so stop scripts on the busy screens too (the longest dialogue, a quiz with all options, the end
+card); `tests/ferry-talk.steps.js` is one. Touch screens get touch wording: keyboard hints carry
+`.kbd-only` and their tap version `.touch-only` (both styled in the starter's `index.html`).
+
 Poster / share image: `play-check.mjs <url> --poster <frames> --shot poster.png --size 1200x630`
 plays exactly that many demo steps and writes `poster.png.json` (method, frames, sha256, state);
 the same frame gives a byte-identical image. Pick the frame by probing `G.state().mode` over the

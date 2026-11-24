@@ -74,6 +74,10 @@ Touch support lives in the game itself, shared by all builds:
   Skill icons become buttons; hold-type buttons release on `pointerup`, `pointercancel`, and
   `pointerleave`. (The starter has tap-to-walk and tap-to-talk; add the joystick for action forms.)
 - In touch mode ignore mouse events, or every joystick touch fires a "left-click attack".
+- No keyboard hints on touch screens: "Space to talk" next to a finger reads as broken. Pair
+  each `.kbd-only` hint with a `.touch-only` one; every key action needs a tap path too.
+- Check with `play-check --device phone,phone-landscape,laptop` on the busy screens: it fails
+  on text off-screen or over other text, which absolute-positioned hints cause on narrow screens.
 - No pointer to aim with: nearest enemy, then joystick direction, then facing.
 - Portrait is narrow: widen fov from 38° to ≈50° and pull back (the starter does); bars to
   the top, bottom for thumbs.

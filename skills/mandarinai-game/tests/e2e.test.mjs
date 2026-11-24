@@ -13,6 +13,7 @@ const SKILL = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const SRC = process.env.MANDARINAI_CAST_3D || path.join(os.homedir(), 'Downloads/3D/final');
 const haveCast = fs.existsSync(path.join(SRC, 'rat.glb')) && fs.existsSync(path.join(SRC, 'ox.glb'));
 const STEPS = path.join(SKILL, 'tests/full-loop.steps.js');
+const TALK = path.join(SKILL, 'tests/ferry-talk.steps.js');
 const node = (args) => execFileSync(process.execPath, args, { cwd: SKILL, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 const json = (stdout) => JSON.parse(stdout.slice(stdout.indexOf('{'), stdout.lastIndexOf('}') + 1));
 const result = (stdout) => json(stdout).result;
@@ -41,6 +42,12 @@ test('starter plays start to finish in dev and as a packed single file', { skip:
   try {
     await new Promise((r) => setTimeout(r, 600));
     expectFullLoop(result(node(['scripts/play-check.mjs', `http://localhost:${port}/?mute`, '--script', STEPS])));
+    // phones: the whole loop plays under touch emulation, and the end card and the longest
+    // dialogue box fit (play-check fails on text off-screen or drawn over other text)
+    const phones = json(node(['scripts/play-check.mjs', `http://localhost:${port}/?mute`, '--device', 'phone,phone-landscape', '--script', STEPS]));
+    for (const d of ['phone', 'phone-landscape']) expectFullLoop(phones[d].result);
+    const talk = json(node(['scripts/play-check.mjs', `http://localhost:${port}/?mute`, '--device', 'phone,phone-landscape,laptop', '--script', TALK]));
+    for (const d of ['phone', 'phone-landscape', 'laptop']) assert.equal(talk[d].result.dialogue, true, `${d}: ferry dialogue should be open`);
     const demo = JSON.parse((s => s.slice(s.indexOf('{'), s.lastIndexOf('}') + 1))(node(['scripts/play-check.mjs', `http://localhost:${port}/?mute`, '--demo'])));
     assert.equal(demo.demo.finished, true, 'the starter demo should play itself to the end');
     assert.equal(demo.state.mode, 'end');

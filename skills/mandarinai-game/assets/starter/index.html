@@ -33,7 +33,9 @@
   #dialogue .zh rt { font-size: .44em; color: var(--blue); letter-spacing: 0; }
   #dialogue .zh.no-py rt { visibility: hidden; }
   #dialogue .en { font-family: Georgia, var(--serif); font-style: italic; font-size: 15px; color: #5a6275; margin-top: 2px; }
-  #dialogue .keys { position: absolute; right: 14px; bottom: 8px; font-size: 11px; color: #8a90a0; }
+  #dialogue .keys { display: block; text-align: right; margin-top: 4px; font-size: 11px; color: #8a90a0; }   /* in the flow: absolute, it sat on a wrapped translation */
+  .touch-only { display: none; }
+  @media (hover: none) { .kbd-only { display: none; } .touch-only { display: inline; } }   /* phones get no keyboard hints */
   #toasts { position: fixed; top: 30%; left: 50%; transform: translateX(-50%); pointer-events: none; }
   .toast { display: flex; flex-direction: column; align-items: center; background: rgba(251,248,241,.95); border: 2px solid var(--gold); border-radius: 14px; padding: 10px 26px; animation: pop .35s cubic-bezier(.2,1.6,.4,1); }
   .toast b { font-size: 46px; color: var(--blue); line-height: 1.1; } .toast i { font-style: normal; color: var(--blue); } .toast span { font-size: 13px; color: #5a6275; }
@@ -60,9 +62,9 @@
 </section>
 
 <div id="hud" hidden><div id="objective"></div><div id="bag"></div></div>
-<div id="prompt" hidden>空格 / 点击 说话 · Space to talk</div>
+<div id="prompt" hidden><span class="kbd-only">空格 说话 · Space to talk</span><span class="touch-only">轻触说话 · tap to talk</span></div>
 <div id="toasts"></div>
-<div id="dialogue" hidden><span class="who"></span><div class="zh"></div><div class="en"></div><span class="keys">P 拼音 · T 译文 · Space ▸</span></div>
+<div id="dialogue" hidden><span class="who"></span><div class="zh"></div><div class="en"></div><span class="keys"><span class="kbd-only">P 拼音 · T 译文 · Space ▸</span><span class="touch-only">轻触继续 · tap ▸</span></span></div>
 
 <section id="end" class="overlay" hidden>
   <h2>第一名</h2><small>dì yī míng · first place</small>
