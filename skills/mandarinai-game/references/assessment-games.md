@@ -77,6 +77,11 @@ actual play/audio review, and delivery checks. Add learning checks before art po
 
 1. Validate IDs, answers, accepted variants, distractor feedback, and objective coverage.
 2. Run correct, wrong, hint, reveal/retry, skip, restart, and completion scenarios.
+   Then sweep learners: `play-check --bot 0.4` and `--bot 0.8` (several seeds each), with
+   `demoPlan(bot)` choosing a wrong option whenever `bot.wrong()` is true. A low-accuracy
+   learner must still reach the exit (feedback, retry, reveal), and both should land inside
+   the session length set in PLAN.md. Bot accuracy measures the game's pacing and recovery
+   paths, never a person's mastery.
 3. Assert numeric progress and evidence as well as screenshots. Use deterministic
    fixtures isolated from real Goose submissions, XP, and personal-best storage.
 4. Check a narrow mobile viewport, keyboard, IME, reduced motion, pause/visibility,

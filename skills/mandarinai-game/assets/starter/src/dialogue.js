@@ -39,6 +39,7 @@ export function createDialogue({ el, names, errors, onSpeak }) {
   el.addEventListener('pointerdown', advance);
   return {
     get open() { return !el.hidden; },
+    get line() { return queue[0] ?? null; },   // the line on screen (autoplay reads its length)
     play(lines, onDone) { queue = [...lines]; done = onDone; el.hidden = false; render(); },
     advance,
   };

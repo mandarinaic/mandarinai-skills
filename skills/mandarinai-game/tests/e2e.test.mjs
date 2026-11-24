@@ -14,7 +14,8 @@ const SRC = process.env.MANDARINAI_CAST_3D || path.join(os.homedir(), 'Downloads
 const haveCast = fs.existsSync(path.join(SRC, 'rat.glb')) && fs.existsSync(path.join(SRC, 'ox.glb'));
 const STEPS = path.join(SKILL, 'tests/full-loop.steps.js');
 const node = (args) => execFileSync(process.execPath, args, { cwd: SKILL, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-const result = (stdout) => JSON.parse(stdout.slice(stdout.indexOf('{'), stdout.lastIndexOf('}') + 1)).result;
+const json = (stdout) => JSON.parse(stdout.slice(stdout.indexOf('{'), stdout.lastIndexOf('}') + 1));
+const result = (stdout) => json(stdout).result;
 
 const expectFullLoop = (r) => {
   assert.equal(r.intro, 'talk');
@@ -44,6 +45,16 @@ test('starter plays start to finish in dev and as a packed single file', { skip:
     assert.equal(demo.demo.finished, true, 'the starter demo should play itself to the end');
     assert.equal(demo.state.mode, 'end');
     assert.equal(demo.state.words.length, 3);
+    // a learner (60% right, seeded) must still finish, more slowly than the perfect demo, and repeat per seed
+    const bot = json(node(['scripts/play-check.mjs', `http://localhost:${port}/?mute`, '--bot', '0.6', '--runs', '2'])).bot;
+    for (const r of bot.runs) {
+      assert.equal(r.finished, true, `learner seed ${r.seed} should finish`);
+      assert.equal(r.state.mode, 'end');
+      assert.ok(r.seconds > demo.state.t, `learner seed ${r.seed} (${r.seconds}s) should be slower than the demo (${demo.state.t}s)`);
+    }
+    assert.ok(bot.runs.some((r) => r.state.nags > 0), 'some learner should hit the gate lock and recover');
+    const again = json(node(['scripts/play-check.mjs', `http://localhost:${port}/?mute`, '--bot', '0.6', '--runs', '1'])).bot.runs[0];
+    assert.deepEqual([again.seconds, again.state.pos], [bot.runs[0].seconds, bot.runs[0].state.pos], 'the same seed must replay the same run');
     // posters: the same demo frame must give the same image, recorded beside it
     const shoot = (f) => node(['scripts/play-check.mjs', `http://localhost:${port}/?mute`, '--poster', '880', '--shot', path.join(dir, f), '--size', '600x315']);
     shoot('a.png'); shoot('b.png');

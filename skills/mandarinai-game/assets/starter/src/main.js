@@ -1,6 +1,7 @@
 // MandarinAi game starter: one scene, a playable cast member, an NPC, a scripted
 // cutscene, collectible words, and the debug hooks every later stage relies on.
 // URL switches: ?auto (skip title)  ?demo (plays itself; any key or tap takes over)  ?mute
+//               ?bot[=accuracy]&seed=n (a learner plays: slower, imprecise, makes wrong turns)
 //               ?show=cast (character lineup)  ?god (no gate lock)  ?paused (frames only via G.step)
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -148,7 +149,7 @@ function ageToasts(dt) { for (let i = toasts.length - 1; i >= 0; i--) if ((toast
 const objective = (zh, en) => { $('#objective').innerHTML = `<b>${zh}</b><span>${en}</span>`; };
 
 // ---------- game state
-let mode = 'loading', player, ferry, crossed = false, cut = null, gateNag = false;
+let mode = 'loading', player, ferry, crossed = false, cut = null, gateNag = false, nags = 0;
 let clock = 0;   // game seconds; animate from this, never performance.now(), so stepped runs repeat exactly
 const collected = [], wordMeshes = [], tmp = new THREE.Vector3();
 const focus = new THREE.Vector3(), tapTarget = { on: false, x: 0, z: 0 };
@@ -238,7 +239,7 @@ function updateWorld(dt) {
   }
   const atGate = dist2(player, W.gate[0], W.gate[1] + 1) < 2;
   if (atGate && collected.length === story.words.length || atGate && Q.has('god')) { finish(); return; }
-  if (atGate && !gateNag) { gateNag = true; talk(story.lines.gateLocked); }
+  if (atGate && !gateNag) { gateNag = true; nags++; talk(story.lines.gateLocked); }
   if (!atGate) gateNag = false;
 }
 
@@ -300,20 +301,33 @@ function frame(dt, draw = true) {
   endFrame();
 }
 
-// ---------- autoplay (?demo): the starter plays its own story. Replace demoPlan with the
-// adapted story's route; keep it reading only game state so it stays repeatable.
+// ---------- autoplay: ?demo plays the perfect route, ?bot plays it like a learner.
+// Replace demoPlan with the adapted story's route; keep it reading only game state so it
+// stays repeatable. `bot` is null for the demo; for a learner, bot.wrong() comes up at
+// 1 - accuracy: send them the wrong way (or pick a wrong answer) and let the game recover.
 const READ = 150;   // steps a line stays up in the demo (2.5 s) so a viewer can read it
 const notPlaying = () => mode !== 'play';
-function demoPlan() {
+function demoPlan(bot) {
   if (mode === 'title') return [{ wait: 60, then: start }];
-  if (mode === 'talk') return [{ wait: READ, until: () => !dialogue.open, then: () => dialogue.open && dialogue.advance() }];
+  if (mode === 'talk') {
+    const wait = bot ? bot.read([...(dialogue.line?.zh || '')].length) : READ;
+    return [{ wait, until: () => !dialogue.open, then: () => dialogue.open && dialogue.advance() }];
+  }
   if (mode === 'cut') return [{ wait: 30 }];
   if (mode !== 'play') return null;   // end screen: the run is over
-  if (!crossed) return [{ to: [ferry.root.position.x, ferry.root.position.z + 1.7], until: notPlaying }, { press: ['KeyE'] }];
+  if (!crossed) {
+    // a learner may try to wade straight across: the river must stop them, not trap them
+    if (bot?.wrong()) return [{ to: [player.root.position.x, W.river[0] - 1], frames: 90, until: notPlaying }];
+    return [{ to: [ferry.root.position.x, ferry.root.position.z + 1.7], until: notPlaying }, { press: ['KeyE'] }];
+  }
+  // or head for the gate before the words are in: the gate must turn them back
+  if (bot && collected.length < story.words.length && !gateNag && bot.wrong()) return [{ to: [W.gate[0], W.gate[1] + 1], until: notPlaying }];
   const next = wordMeshes.find((s) => s.visible);
   return [{ to: next ? [next.position.x, next.position.z] : [W.gate[0], W.gate[1] + 1], until: notPlaying }];
 }
-const demo = createAutoplay({ keys, pressed, pos: () => [player.root.position.x, player.root.position.z], plan: demoPlan });
+// ?bot=0.6&seed=3: accuracy 0..1 (default 0.7), seed picks one repeatable learner (default 1)
+const BOT = Q.has('bot') ? { accuracy: Q.get('bot') ? Number(Q.get('bot')) : 0.7, seed: Number(Q.get('seed') || 1) } : null;
+const demo = createAutoplay({ keys, pressed, pos: () => [player.root.position.x, player.root.position.z], plan: demoPlan, human: BOT });
 // a real key or tap ends the demo and hands the game over where it stands
 for (const ev of ['keydown', 'pointerdown']) addEventListener(ev, (e) => { if (e.isTrusted && demo.running) demo.stop(); }, true);
 
@@ -330,7 +344,7 @@ Object.assign(G, {
   advance: () => dialogue.advance(),
   demo,   // G.demo.start() / .stop() / .running: the ?demo autoplay
   start: () => start(),
-  state: () => ({ mode, crossed, words: collected.map((w) => w.zh), pos: player ? [+player.root.position.x.toFixed(2), +player.root.position.z.toFixed(2)] : null, dialogue: dialogue.open, demo: demo.running, errors: [...G.errors] }),
+  state: () => ({ mode, t: +clock.toFixed(2), crossed, nags, words: collected.map((w) => w.zh), pos: player ? [+player.root.position.x.toFixed(2), +player.root.position.z.toFixed(2)] : null, dialogue: dialogue.open, demo: demo.running, errors: [...G.errors] }),
 });
 
 // tap / click on the ground to walk there; tap the ferry to talk
@@ -370,7 +384,7 @@ loadCast().then((cast) => {
     setupPlay(cast); ferry.height = (cast[story.cast.ferry]?.meta.height ?? 1.1) * (story.scale?.ferry ?? 1);
     mode = 'title'; $('#start').hidden = false; $('#loading').hidden = true;
     if (Q.has('auto')) start();
-    if (Q.has('demo')) demo.start();
+    if (Q.has('demo') || BOT) demo.start();
   }
   G.ready = true; requestAnimationFrame(loop);
 }).catch((e) => { G.errors.push(e.message); $('#loading').textContent = e.message; console.error(e); });

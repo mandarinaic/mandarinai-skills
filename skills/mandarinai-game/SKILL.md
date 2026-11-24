@@ -89,7 +89,7 @@ lists apart in your report: **verified** (seen, heard, or measured), **runs with
 ```bash
 cd SKILL_ROOT && npm install                      # once; three.js, gltf-transform, esbuild, sharp, playwright
 node scripts/new-game.mjs --out /abs/output/games/<slug> --cast rat,ox
-node /abs/output/games/<slug>/serve.mjs           # http://localhost:5173/?auto  (?demo, ?show=cast, ?mute, ?god)
+node /abs/output/games/<slug>/serve.mjs           # http://localhost:5173/?auto  (?demo, ?bot, ?show=cast, ?mute, ?god)
 ```
 
 The starter (`assets/starter/`) is a complete small game — 十二生肖 race with Rui and Bo, a
@@ -105,7 +105,7 @@ from an empty file.
 | `scripts/build-single-html.mjs` | shrink assets, bundle, inline everything → `dist/<slug>.html` + `dist/site/` |
 | `assets/starter/src/input.js` | key state that survives lost key-ups, F3 debug panel. Use it; do not rewrite input |
 | `assets/starter/src/loop.js` | fixed 60 Hz logic step; a stall drops the backlog instead of taking one huge step |
-| `assets/starter/src/autoplay.js` | scripted input queue (hold / press / wait / walk-to) refilled by a game `plan()`: the `?demo` run |
+| `assets/starter/src/autoplay.js` | scripted input queue (hold / press / wait / walk-to) refilled by a game `plan(bot)`: the `?demo` run, and the `?bot` learner (`makeLearner`) |
 
 ## Working rules
 
@@ -146,7 +146,8 @@ Background tabs run no `requestAnimationFrame`, so the game exposes hooks on `wi
 `G.step(n)` (logic + render, slow), `G.upd(n)` (logic only, use for long runs), `G.press(code)`,
 `G.hold(code, on)`, `G.teleport(x, z)`, `G.advance()` (dialogue), `G.start()`, `G.state()`,
 `G.errors`, `G.demo` (`.start()`, `.stop()`, `.running`). URL switches: `?auto` skip title,
-`?demo` the game plays itself (any real key or tap takes over), `?mute`, `?show=cast` lineup, `?god`,
+`?demo` the game plays itself (any real key or tap takes over), `?bot[=accuracy]&seed=n` a learner
+plays it, `?mute`, `?show=cast` lineup, `?god`,
 `?paused` (real-time loop off; play-check adds it so screenshots match the printed state).
 
 ```bash
@@ -157,6 +158,22 @@ node scripts/play-check.mjs "http://localhost:5173/?mute" --shot /abs/shot.png -
 `G.demo` to its end first and fails if it never finishes. When the story changes, rewrite
 `demoPlan()` in `main.js` as the new route (read game state only); a finished demo is the
 cheapest whole-story regression, and a live `?demo` run is ready-made trailer footage.
+
+The demo proves the route can be finished; the learner bot shows whether a learner gets
+through, and how long it takes. `demoPlan(bot)` gets `null` for the demo and a seeded learner for
+`?bot`: the autoplay adds a reaction pause before each decision and lands walks a little off target,
+and the plan uses `bot.read(chars)` for reading time and `bot.wrong()` (true at 1 − accuracy) to
+take a wrong turn or pick a wrong answer. Every wrong branch must lead back to the route: a river
+that stops the hero, a gate that sends them back, feedback and a retry for a wrong answer.
+
+```bash
+node scripts/play-check.mjs "http://localhost:5173/?mute" --bot 0.6 --runs 3 --time 60-600
+```
+
+Each run uses its own seed in a fresh page, and the report lists game seconds per run. The check
+fails when a run never ends (the learner is trapped) or, with `--time`, lands outside the window.
+Set the window in PLAN.md from the target session length; tune pacing until accuracy 0.6 sits
+comfortably inside it. A seed replays exactly, so a failing seed is a reproducible bug report.
 
 Poster / share image: `play-check.mjs <url> --poster <frames> --shot poster.png --size 1200x630`
 plays exactly that many demo steps and writes `poster.png.json` (method, frames, sha256, state);
