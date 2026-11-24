@@ -3,7 +3,7 @@ name: mandarinai-game
 description: "Build MandarinAi browser story games or interactive Mandarin learning missions. Use for playable Chinese stories, textbook-to-game adaptations, situation-based dialogue games, or 3D browser games. Learning-first requests use validated lesson objectives and quizzes before scene production; standalone story games can retain pinyin dialogue and word collectibles. Supports Swan integration or an explicitly selected offline HTML build. Lesson authoring alone uses mandarinai-lesson; video output uses mandarinai-video or mandarinai-story-video."
 license: AGPL-3.0
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 # MandarinAi game
@@ -74,8 +74,8 @@ and UI observations in that file.
 | 0 Plan | PLAN.md: beats, form, casting, learning layer, stages | inspect against the brief |
 | 1 Scaffold | `new-game.mjs` project running, cast lineup page | `?show=cast` screenshot |
 | 2 World | ground, sky, light, props for each scene | still screenshots before motion |
-| 3 Cast in motion | hero controller, NPCs, procedural motion or rigged clips | close-up screenshots + state numbers |
-| 4 Story loop | dialogue, objectives, scripted beats, ending | scripted run start→end with G hooks |
+| 3 Cast in motion | hero controller, NPCs, procedural motion or rigged clips | close-up screenshots + state numbers + `--motion` clean |
+| 4 Story loop | dialogue, objectives, scripted beats, ending | scripted run start→end with G hooks; `--bot` runs finish in the time window |
 | 5 Feel and effects | hit feel, VFX, camera polish (for action forms) | user plays |
 | 6 Sound and voice | SFX, music, optional voiced lines | user plays and listens |
 | 7 Pack | single HTML + static site | play-check on `file://`, user double-clicks |
@@ -102,6 +102,7 @@ from an empty file.
 | `scripts/new-game.mjs` | copy the starter, vendor three.js (no CDN at runtime), copy the logo, prepare cast |
 | `scripts/prepare-cast.mjs` | MandarinAi models → game-ready GLB (Y-up, feet on 0, facing +Z, ~12k tris, WebP), writes `assets/cast/cast.json` |
 | `scripts/play-check.mjs` | headless run through the `G` hooks: screenshot, state JSON, fails on page errors or any network request a shipped game should not make |
+| `scripts/motion-lint.mjs` | per-step actor samples → snaps, about-faces, sunk feet, broken squash, NaN (used by `play-check --motion`) |
 | `scripts/build-single-html.mjs` | shrink assets, bundle, inline everything → `dist/<slug>.html` + `dist/site/` |
 | `assets/starter/src/input.js` | key state that survives lost key-ups, F3 debug panel. Use it; do not rewrite input |
 | `assets/starter/src/loop.js` | fixed 60 Hz logic step; a stall drops the backlog instead of taking one huge step |
@@ -145,7 +146,7 @@ Read on demand:
 Background tabs run no `requestAnimationFrame`, so the game exposes hooks on `window.G`:
 `G.step(n)` (logic + render, slow), `G.upd(n)` (logic only, use for long runs), `G.press(code)`,
 `G.hold(code, on)`, `G.teleport(x, z)`, `G.advance()` (dialogue), `G.start()`, `G.state()`,
-`G.errors`, `G.demo` (`.start()`, `.stop()`, `.running`). URL switches: `?auto` skip title,
+`G.errors`, `G.demo` (`.start()`, `.stop()`, `.running`), `G.motion()` (one sample per actor). URL switches: `?auto` skip title,
 `?demo` the game plays itself (any real key or tap takes over), `?bot[=accuracy]&seed=n` a learner
 plays it, `?mute`, `?show=cast` lineup, `?god`,
 `?paused` (real-time loop off; play-check adds it so screenshots match the printed state).
@@ -183,6 +184,12 @@ so stop scripts on the busy screens too (the longest dialogue, a quiz with all o
 card); `tests/ferry-talk.steps.js` is one. Touch screens get touch wording: keyboard hints carry
 `.kbd-only` and their tap version `.touch-only` (both styled in the starter's `index.html`).
 
+Motion: add `--motion` to a `--demo` or `--bot` run to sample every actor after every step
+(`G.motion()`, built from motion.js `sample()`) and fail on what a viewer sees as a glitch: a
+snap (position jumps), an instant about-face, feet under the ground, squash past its limits,
+NaN. Deliberate cuts go through `place()`; everything else moves in arcs and eases. Fixes for
+what it finds: `references/characters-animation.md` (Snaps). Run it after any motion change.
+
 Poster / share image: `play-check.mjs <url> --poster <frames> --shot poster.png --size 1200x630`
 plays exactly that many demo steps and writes `poster.png.json` (method, frames, sha256, state);
 the same frame gives a byte-identical image. Pick the frame by probing `G.state().mode` over the
@@ -193,7 +200,9 @@ Skill regression (scaffold, play, pack, replay packed): `node --test tests/*.tes
 - **Numbers decide, screenshots support.** A frame-stepped screenshot can be stale; state is not.
 - Logic runs in **fixed 1/60 s steps** (`src/loop.js`); animate from the game clock `clock`,
   never `performance.now()`, `Date.now()` or `Math.random()` (use the seeded `mulberry32`),
-  or stepped runs, the demo and posters stop repeating.
+  or stepped runs, the demo, the bot and posters stop repeating.
+- Before handing over a stage: `--demo --motion`, `--bot 0.6 --runs 3 --motion`, and the busy
+  screens with `--device phone,phone-landscape,laptop`. All three are cheap and logic-only.
 - Honour `prefers-reduced-motion`: non-essential motion (title orbit, pops, shakes) holds still.
 - Keep every game flow **synchronous in game time**: dialogue completion, delays, and toasts
   advance with `dt`, never `setTimeout` or Promise chains — microtasks do not run between

@@ -48,12 +48,15 @@ test('starter plays start to finish in dev and as a packed single file', { skip:
     for (const d of ['phone', 'phone-landscape']) expectFullLoop(phones[d].result);
     const talk = json(node(['scripts/play-check.mjs', `http://localhost:${port}/?mute`, '--device', 'phone,phone-landscape,laptop', '--script', TALK]));
     for (const d of ['phone', 'phone-landscape', 'laptop']) assert.equal(talk[d].result.dialogue, true, `${d}: ferry dialogue should be open`);
-    const demo = JSON.parse((s => s.slice(s.indexOf('{'), s.lastIndexOf('}') + 1))(node(['scripts/play-check.mjs', `http://localhost:${port}/?mute`, '--demo'])));
+    const demo = JSON.parse((s => s.slice(s.indexOf('{'), s.lastIndexOf('}') + 1))(node(['scripts/play-check.mjs', `http://localhost:${port}/?mute`, '--demo', '--motion'])));
     assert.equal(demo.demo.finished, true, 'the starter demo should play itself to the end');
     assert.equal(demo.state.mode, 'end');
     assert.equal(demo.state.words.length, 3);
+    // --motion fails the run on any snap, spin, sunk foot or broken squash; check it really looked
+    assert.deepEqual(demo.demo.motion.actors, ['player', 'ferry']);
+    assert.equal(demo.demo.motion.steps, demo.demo.frames);
     // a learner (60% right, seeded) must still finish, more slowly than the perfect demo, and repeat per seed
-    const bot = json(node(['scripts/play-check.mjs', `http://localhost:${port}/?mute`, '--bot', '0.6', '--runs', '2'])).bot;
+    const bot = json(node(['scripts/play-check.mjs', `http://localhost:${port}/?mute`, '--bot', '0.6', '--runs', '2', '--motion'])).bot;
     for (const r of bot.runs) {
       assert.equal(r.finished, true, `learner seed ${r.seed} should finish`);
       assert.equal(r.state.mode, 'end');

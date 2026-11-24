@@ -42,6 +42,18 @@ keys (wind-up, hit, return) always look stiff.
 - Big bodies standing up or falling: head leads, weight shifts onto a support, legs push,
   torso follows last. Never a 0.1 s crossfade between very different poses ("folding open").
 
+## Snaps (what play-check --motion catches)
+A viewer reads any one-step jump in position, facing or body height as a glitch, even when the
+logic is right. The starter's lint found three before it was clean:
+- Boarding or leaving a vehicle by setting `root.position`: arc there instead (lerp plus a
+  `4·lift·k·(1−k)` rise) and turn with `face()` on the way.
+- Reversing at full speed: ease the velocity *vector*, not just the speed, so a turn takes a
+  few steps.
+- A dialogue or wall zeroing `speed`: the hop bob dropped to the ground in one step. The
+  starter's gait layers now follow speed with a short lag (`actor.gait`).
+A real cut (a scene change, a respawn) goes through `place(actor, x, y, z)`, which the lint skips.
+Thresholds are in `scripts/motion-lint.mjs`; tune the motion, not the thresholds.
+
 ## Idle and weapons
 - Out of combat: relaxed stance, weapon on the back; draw before the first strike; sheathe a
   few seconds after combat. A character always holding a weapon "looks stiff".

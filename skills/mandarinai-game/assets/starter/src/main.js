@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { keys, pressed, endFrame, debugPanel } from './input.js';
-import { makeActor, animate, face, squash, flash, jump } from './motion.js';
+import { makeActor, animate, face, squash, flash, place, sample } from './motion.js';
 import { createDialogue } from './dialogue.js';
 import { story } from './story.js';
 import { createFixedStep } from './loop.js';
@@ -167,8 +167,9 @@ function wordSprite(w) {
 }
 
 function setupPlay(cast) {
-  player = actorFor(cast, 'player'); player.root.position.set(W.start[0], 0, W.start[1]); player.root.rotation.y = Math.PI;
-  ferry = actorFor(cast, 'ferry', { hopHeight: 0.04 }); ferry.root.position.set(W.ferry[0], 0, W.ferry[1]); ferry.root.rotation.y = -Math.PI / 2;
+  player = actorFor(cast, 'player', { id: 'player' }); player.root.position.set(W.start[0], 0, W.start[1]); player.root.rotation.y = Math.PI;
+  player.vx = player.vz = 0;   // walking velocity, m/s (updatePlayer)
+  ferry = actorFor(cast, 'ferry', { id: 'ferry', hopHeight: 0.04 }); ferry.root.position.set(W.ferry[0], 0, W.ferry[1]); ferry.root.rotation.y = -Math.PI / 2;
   ferry.root.scale.setScalar(story.scale?.ferry ?? 1);   // per-role scale lives in story.js, not in the model
   scene.add(player.root, ferry.root);
   for (const w of story.words) { const s = wordSprite(w); wordMeshes.push(s); scene.add(s); }
@@ -198,7 +199,7 @@ G.spin = (on = true) => { G.lineupSpin = on; };
 // ---------- per-frame logic
 // Dialogue completion is a plain callback, never a Promise: microtasks do not run between
 // G.step() frames, so a promise-based flow would stall every scripted test.
-function talk(lines, next) { mode = 'talk'; player.speed = 0; dialogue.play(lines, () => { pressed.clear(); next ? next() : (mode = 'play'); }); }
+function talk(lines, next) { mode = 'talk'; player.speed = player.vx = player.vz = 0; dialogue.play(lines, () => { pressed.clear(); next ? next() : (mode = 'play'); }); }
 
 function updatePlayer(dt) {
   let ix = 0, iz = 0;
@@ -207,9 +208,12 @@ function updatePlayer(dt) {
   if (ix || iz) tapTarget.on = false;
   else if (tapTarget.on) { ix = tapTarget.x - player.root.position.x; iz = tapTarget.z - player.root.position.z; if (Math.hypot(ix, iz) < 0.2) tapTarget.on = false; }
   const len = Math.hypot(ix, iz) || 1; ix /= len; iz /= len;
-  const want = (ix || iz) ? player.maxSpeed : 0;
-  player.speed += (want - player.speed) * Math.min(1, dt * 10);
-  const p = player.root.position; const nx = p.x + ix * player.speed * dt; let nz = p.z + iz * player.speed * dt;
+  // ease the velocity, not just the speed: a reversal at full speed then turns through a short
+  // arc instead of flipping direction in one step (the motion lint reports that as a snap)
+  const ease = Math.min(1, dt * 10);
+  player.vx += (ix * player.maxSpeed - player.vx) * ease; player.vz += (iz * player.maxSpeed - player.vz) * ease;
+  player.speed = Math.hypot(player.vx, player.vz);
+  const p = player.root.position; const nx = p.x + player.vx * dt; let nz = p.z + player.vz * dt;
   // the river is a wall until the ferry has carried you; never accept an illegal position
   if (!crossed && nz < W.river[1] + 0.35) nz = Math.max(nz, W.river[1] + 0.35);
   if (crossed && nz > W.river[0] - 0.35) nz = Math.min(nz, W.river[0] - 0.35);
@@ -243,21 +247,31 @@ function updateWorld(dt) {
   if (!atGate) gateNag = false;
 }
 
+// The cut: hop up onto the ox (HOP_ON s), ride across (dur), hop down to the far bank (HOP_OFF s).
+// Every move is an arc, never a jump cut: the motion lint (play-check --motion) reports snaps.
+const HOP_ON = 0.6, HOP_OFF = 0.55;
 function startFerry() {
-  mode = 'cut'; jump(player, 3.6);
+  mode = 'cut'; squash(player, 0.5);   // crouch before the hop
   const from = ferry.root.position.clone(), to = new THREE.Vector3(W.farBank[0] + 1.2, 0, W.farBank[1]);
-  cut = { t: 0, dur: 4.2, from, to };
+  cut = { t: 0, dur: 4.2, from, to, hopFrom: player.root.position.clone(), landAt: new THREE.Vector3(W.farBank[0] - 0.6, 0, W.farBank[1] - 1), hopOff: null, onBack: false };
 }
+// ride on the back: the ox's height comes from the manifest, never from the mesh
+const backOf = (out) => out.copy(ferry.root.position).setY(ferry.root.position.y + (ferry.height || 1.1) * 0.62);
+const arc = (out, a, b, k, lift) => { out.lerpVectors(a, b, k); out.y += 4 * lift * k * (1 - k); return out; };
+const faceLike = (a, b, dt) => face(a, Math.sin(b.root.rotation.y), Math.cos(b.root.rotation.y), dt, 8);
 function updateCut(dt) {
-  cut.t += dt; const k = Math.min(cut.t / cut.dur, 1), e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
+  cut.t += dt; const p = player.root.position; player.speed = 0;
+  if (cut.t < HOP_ON) { arc(p, cut.hopFrom, backOf(tmp), cut.t / HOP_ON, 0.45); faceLike(player, ferry, dt); return; }
+  if (!cut.onBack) { cut.onBack = true; squash(player, 0.6); }
+  const k = Math.min((cut.t - HOP_ON) / cut.dur, 1), e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
   const prev = ferry.root.position.clone(); ferry.root.position.lerpVectors(cut.from, cut.to, e);
   const v = ferry.root.position.clone().sub(prev); ferry.speed = v.length() / Math.max(dt, 1e-4); face(ferry, v.x, v.z, dt, 3);
-  // ride on the back: the ox's height comes from the manifest, never from the mesh
-  player.root.position.copy(ferry.root.position).add(new THREE.Vector3(0, (ferry.height || 1.1) * 0.62 , 0));
-  player.root.rotation.y = ferry.root.rotation.y; player.speed = 0;
-  if (k >= 1) {
-    crossed = true; cut = null; ferry.speed = 0;
-    player.root.position.set(W.farBank[0] - 0.6, 0, W.farBank[1] - 1); jump(player, 3); mode = 'play';
+  if (k < 1) { backOf(p); faceLike(player, ferry, dt); return; }
+  if (!cut.hopOff) { cut.hopOff = backOf(new THREE.Vector3()); ferry.speed = 0; squash(player, 0.4); }
+  const j = Math.min((cut.t - HOP_ON - cut.dur) / HOP_OFF, 1);
+  arc(p, cut.hopOff, cut.landAt, j, 0.4); face(player, cut.landAt.x - cut.hopOff.x, cut.landAt.z - cut.hopOff.z, dt, 8);
+  if (j >= 1) {
+    crossed = true; cut = null; squash(player, 0.8); mode = 'play';
     objective(`收集三个字 0/${story.words.length}`, 'Collect three characters, then reach the gate');
   }
 }
@@ -340,10 +354,11 @@ Object.assign(G, {
   paused: Q.has('paused'),   // true stops the real-time loop; G.step / G.upd still advance the game
   press: (...codes) => codes.forEach((c) => pressed.add(c)),
   hold: (code, on = true) => (on ? keys.add(code) : keys.delete(code)),
-  teleport: (x, z) => { player.root.position.set(x, 0, z); focus.copy(player.root.position); },
+  teleport: (x, z) => { place(player, x, 0, z); focus.copy(player.root.position); },
   advance: () => dialogue.advance(),
   demo,   // G.demo.start() / .stop() / .running: the ?demo autoplay
   start: () => start(),
+  motion: () => (player ? [player, ferry].map(sample) : []),   // play-check --motion: every actor, every step
   state: () => ({ mode, t: +clock.toFixed(2), crossed, nags, words: collected.map((w) => w.zh), pos: player ? [+player.root.position.x.toFixed(2), +player.root.position.z.toFixed(2)] : null, dialogue: dialogue.open, demo: demo.running, errors: [...G.errors] }),
 });
 

@@ -8,6 +8,7 @@
 //   node scripts/play-check.mjs <url> --poster <frames> --shot poster.png [--size 1200x630]
 //   node scripts/play-check.mjs <url> --bot [accuracy] [--runs 3] [--seed 1] [--time lo-hi] [--budget frames]
 //   any of the above with --device phone,laptop (instead of --size) to repeat the check per device
+//   --demo or --bot with --motion to lint every actor's motion on every step of the run
 // steps.js is evaluated in the page after G.ready, as the body of an async function
 // with G in scope, e.g.  G.start(); G.step(30); G.advance(); G.hold('KeyW'); G.step(120);
 // Its return value is printed as JSON. A file:// URL works too (single-HTML builds).
@@ -19,6 +20,10 @@
 // pauses, imprecise walking, slower reading, wrong turns at 1 - accuracy. Each run gets its own
 // seed (seed, seed+1, ...) in a fresh page; the report lists game seconds per run. It fails when
 // a run never finishes (the game trapped the learner) or, with --time, lands outside lo-hi seconds.
+// --motion samples G.motion() (one entry per actor, motion.js sample()) after every logic step of
+// the --demo or --bot run and fails on what a viewer would see as a glitch: snaps (teleports
+// that are not place()), instant about-faces, feet under the ground, squash past its limits,
+// NaN. See scripts/motion-lint.mjs for the thresholds.
 // --device runs the whole check once per preset: phone (390x844, dpr 2, touch), phone-landscape,
 // tablet (820x1180, touch), laptop (1280x800). With several devices, shots get a -<device> suffix.
 // On every device the final screen must fit: visible text, buttons or images reaching outside the
@@ -28,6 +33,7 @@
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { chromium } from 'playwright';
+import { lintMotion } from './motion-lint.mjs';
 
 const args = process.argv.slice(2);
 const url = args[0];
@@ -59,6 +65,8 @@ const timeWindow = opt('--time') ? opt('--time').split('-').map(Number) : null;
 if (opt('--poster') !== undefined && !(posterAt > 0)) fail('--poster needs a frame count > 0');
 if (posterAt && !shotArg) fail('--poster needs --shot <file>');
 if ([posterAt, demoBudget, botAcc].filter(Boolean).length > 1) fail('use one of --demo, --poster, --bot');
+const motion = args.includes('--motion');
+if (motion && !demoBudget && !botAcc) fail('--motion needs --demo or --bot: it lints the frames of that run');
 if (botAcc && !(botAcc > 0 && botAcc <= 1)) fail('--bot accuracy must be in (0, 1]');
 if (timeWindow && !(timeWindow.length === 2 && timeWindow[0] < timeWindow[1])) fail('--time needs lo-hi seconds, e.g. --time 60-600');
 
@@ -129,28 +137,44 @@ const LAYOUT = () => {
 const checkLayout = async (page, label) => { for (const p of await page.evaluate(LAYOUT)) problems.push(`[${label}] layout: ${p}`); };
 
 // Plays G.demo (perfect route or learner) logic-only until it ends or the budget runs out.
-const PLAY_DEMO = ({ budget }) => {
+// One step at a time, so frames and game seconds are exact where the run ends; with motion it
+// keeps every G.motion() sample.
+const PLAY_DEMO = ({ budget, motion }) => {
   const G = window.G;
   if (!G.demo) throw new Error('this page has no G.demo autoplay (see the starter src/autoplay.js)');
-  G.demo.start(); let frames = 0;
-  while (G.demo.running && frames < budget) { G.upd(60); frames += 60; }
-  return { frames, finished: !G.demo.running };
+  if (motion && typeof G.motion !== 'function') throw new Error('--motion: this page has no G.motion() (see the starter: motion.js sample())');
+  G.demo.start(); let frames = 0; const samples = motion ? [] : null;
+  while (G.demo.running && frames < budget) {
+    G.upd(1); frames += 1;
+    if (motion) samples.push(G.motion());
+  }
+  return { frames, finished: !G.demo.running, samples };
 };
+
+// Lints one run's samples; findings become problems, the summary goes in the report.
+function motionReport(samples, label) {
+  if (!samples) return undefined;
+  const found = lintMotion(samples);
+  for (const f of found.slice(0, 12)) problems.push(`[${label}] motion: ${f.kind} ${f.id} steps ${f.from}-${f.to} (${(f.from / 60).toFixed(2)}-${(f.to / 60).toFixed(2)} s) peak ${f.peak}`);
+  if (found.length > 12) problems.push(`[${label}] motion: ...and ${found.length - 12} more`);
+  return { steps: samples.length, actors: [...new Set(samples.flat().map((s) => s.id))], findings: found.length };
+}
 
 async function checkOnce() {
   const page = await openGame();
-  const result = await page.evaluate(async ({ body, demoBudget, posterAt, PLAY }) => {
+  const result = await page.evaluate(async ({ body, demoBudget, posterAt, PLAY, motion }) => {
     const G = window.G; G.paused = true; G.step?.(2);
     let demo = null;
     if (posterAt) {
       if (!G.demo) throw new Error('--poster: this page has no G.demo autoplay (see the starter src/autoplay.js)');
       G.demo.start(); G.upd(posterAt);
     }
-    if (demoBudget) { demo = new Function(`return (${PLAY})`)()({ budget: demoBudget }); G.step(1); }
+    if (demoBudget) { demo = new Function(`return (${PLAY})`)()({ budget: demoBudget, motion }); G.step(1); }
     const r = await new Function('G', `return (async () => { ${body} })()`)(G);
     G.render?.();   // draw the final state: logic-only G.upd leaves the last frame stale
     return { result: r ?? null, demo, state: G.state?.() ?? null, errors: G.errors };
-  }, { body: script, demoBudget, posterAt, PLAY: PLAY_DEMO.toString() });
+  }, { body: script, demoBudget, posterAt, PLAY: PLAY_DEMO.toString(), motion });
+  if (result.demo?.samples) { result.demo.motion = motionReport(result.demo.samples, `${device.name} demo`); delete result.demo.samples; }
   const shot = shotFor(device);
   if (shot) await screenshot(page, shot);
   await checkLayout(page, device.name);
@@ -172,14 +196,14 @@ async function checkBot() {
   for (let i = 0; i < runs; i++) {
     const seed = seed0 + i;
     const page = await openGame({ bot: String(botAcc), seed: String(seed) });
-    const r = await page.evaluate(({ budget, PLAY }) => {
+    const r = await page.evaluate(({ budget, PLAY, motion }) => {
       const G = window.G; G.paused = true;
-      const run = new Function(`return (${PLAY})`)()({ budget });
+      const run = new Function(`return (${PLAY})`)()({ budget, motion });
       G.render?.();
       return { ...run, state: G.state?.() ?? null, errors: G.errors };
-    }, { budget, PLAY: PLAY_DEMO.toString() });
+    }, { budget, PLAY: PLAY_DEMO.toString(), motion });
     const seconds = typeof r.state?.t === 'number' ? r.state.t : +(r.frames / 60).toFixed(2);
-    out.push({ seed, finished: r.finished, seconds, frames: r.frames, state: r.state });
+    out.push({ seed, finished: r.finished, seconds, frames: r.frames, motion: motionReport(r.samples, `${device.name} seed ${seed}`), state: r.state });
     if (!r.finished) problems.push(`bot seed ${seed} still playing after ${r.frames} frames (mode ${r.state?.mode}): the learner is stuck, or plan() cannot recover from a wrong turn`);
     else if (timeWindow && (seconds < timeWindow[0] || seconds > timeWindow[1])) problems.push(`bot seed ${seed} took ${seconds}s, outside --time ${timeWindow.join('-')}`);
     if (r.errors?.length) problems.push(...r.errors.map((e) => `G.errors (seed ${seed}): ${e}`));
